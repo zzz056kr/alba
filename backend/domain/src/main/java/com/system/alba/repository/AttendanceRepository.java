@@ -14,12 +14,12 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long>, A
 
     @EntityGraph(attributePaths = {"shop", "shopMember", "shopMember.account", "schedule"})
     Optional<Attendance> findFirstByShopMember_NoAndWorkDateAndClockOutAtIsNullOrderByClockInAtDesc(
-            Long shopMemberNo,
+            Long shopMemberId,
             LocalDate workDate
     );
 
     @EntityGraph(attributePaths = {"shop", "shopMember", "shopMember.account", "schedule"})
-    Optional<Attendance> findFirstByShopMember_NoAndClockOutAtIsNullOrderByClockInAtDesc(Long shopMemberNo);
+    Optional<Attendance> findFirstByShopMember_NoAndClockOutAtIsNullOrderByClockInAtDesc(Long shopMemberId);
 
     @EntityGraph(attributePaths = {"shop", "shopMember", "shopMember.account", "schedule"})
     Optional<Attendance> findByNoAndShop_No(Long no, Long shopNo);

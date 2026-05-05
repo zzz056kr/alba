@@ -1,0 +1,93 @@
+@baseUrl = http://localhost:8080
+@accessToken = REPLACE_ACCESS_TOKEN
+@superAdminToken = REPLACE_SUPER_ADMIN_TOKEN
+@accountId = test-user
+
+### 회원가입
+POST {{baseUrl}}/account/join
+Content-Type: application/json
+
+{
+  "id": "new-user",
+  "name": "신규 사용자",
+  "password": "Password123!",
+  "email": "new-user@example.com"
+}
+
+### 계정 생성 - SUPER_ADMIN
+POST {{baseUrl}}/account
+Authorization: Bearer {{superAdminToken}}
+Content-Type: application/json
+
+{
+  "id": "created-by-admin",
+  "name": "관리자생성",
+  "password": "Password123!",
+  "email": "created-by-admin@example.com"
+}
+
+### 계정 목록 조회 - SUPER_ADMIN
+GET {{baseUrl}}/account/list?page=1&size=20&keyword=test
+Authorization: Bearer {{superAdminToken}}
+
+### 계정 상세 조회 - SUPER_ADMIN
+GET {{baseUrl}}/account/{{accountId}}
+Authorization: Bearer {{superAdminToken}}
+
+### 내 정보 조회
+GET {{baseUrl}}/account/me
+Authorization: Bearer {{accessToken}}
+
+### 내 정보 수정
+PUT {{baseUrl}}/account/me
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "email": "updated-me@example.com"
+}
+
+### 내 비밀번호 변경
+PUT {{baseUrl}}/account/me/password
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "currentPassword": "Password123!",
+  "newPassword": "Password456!"
+}
+
+### 내 비밀번호 변경 코드 발송
+POST {{baseUrl}}/account/me/password/code
+Authorization: Bearer {{accessToken}}
+
+### 내 비밀번호 코드로 변경
+PUT {{baseUrl}}/account/me/password/code
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "code": "123456",
+  "newPassword": "Password789!"
+}
+
+### 계정 수정 - SUPER_ADMIN
+PUT {{baseUrl}}/account/{{accountId}}
+Authorization: Bearer {{superAdminToken}}
+Content-Type: application/json
+
+{
+  "name": "수정된 이름",
+  "email": "edited@example.com",
+  "status": "ACTIVE",
+  "roles": ["USER"]
+}
+
+### 관리자 비밀번호 변경 - SUPER_ADMIN
+PUT {{baseUrl}}/account/{{accountId}}/password
+Authorization: Bearer {{superAdminToken}}
+Content-Type: application/json
+
+{
+  "newPassword": "AdminChanged123!"
+}

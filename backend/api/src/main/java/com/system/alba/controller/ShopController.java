@@ -60,7 +60,17 @@ public class ShopController {
         return ResponseModel.ok(shopService.clockInByQr(shopId, form, authentication));
     }
 
-    @PostMapping("/{shopId}/attendances/quick-daily")
+    @PostMapping("/{shopId}/attendances/clock-out/qr")
+    @PreAuthorize("@shopAuth.isStaff(#shopId)")
+    public ResponseEntity<ResponseModel<AttendanceDto.Detail>> clockOutByQr(
+            @PathVariable Long shopId,
+            @Valid @RequestBody AttendanceDto.ClockOutQrForm form,
+            Authentication authentication
+    ) throws ServerException {
+        return ResponseModel.ok(shopService.clockOutByQr(shopId, form, authentication));
+    }
+
+    @PostMapping("/{shopId}/daily-worker/quick-create")
     @PreAuthorize("@shopAuth.isOwner(#shopId)")
     public ResponseEntity<ResponseModel<AttendanceDto.QuickDailyCreateResponse>> createQuickDailyAttendance(
             @PathVariable Long shopId,
@@ -137,15 +147,15 @@ public class ShopController {
         return ResponseModel.ok(shopService.createManualShopMember(shopId, form, authentication));
     }
 
-    @PutMapping("/{shopId}/members/{memberId}/approve")
+    @PutMapping("/{shopId}/members/{shopMemberId}/approve")
     @PreAuthorize("@shopAuth.isOwner(#shopId)")
     public ResponseEntity<ResponseModel<ShopMemberDto.Detail>> approveShopMember(
             @PathVariable Long shopId,
-            @PathVariable Long memberId,
+            @PathVariable Long shopMemberId,
             @Valid @RequestBody ShopMemberDto.ApproveForm form,
             Authentication authentication
     ) throws ServerException {
-        return ResponseModel.ok(shopService.approveShopMember(shopId, memberId, form, authentication));
+        return ResponseModel.ok(shopService.approveShopMember(shopId, shopMemberId, form, authentication));
     }
 
     @PutMapping("/{shopId}")

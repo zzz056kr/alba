@@ -16,7 +16,7 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long>, Sched
 
     @EntityGraph(attributePaths = {"shop", "shopMember", "shopMember.account"})
     Optional<Schedule> findFirstByShopMember_NoAndWorkDateAndStatusOrderByStartTimeAsc(
-            Long shopMemberNo,
+            Long shopMemberId,
             LocalDate workDate,
             com.system.alba.common.AppType.ScheduleStatus status
     );

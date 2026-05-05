@@ -1,0 +1,11 @@
+@baseUrl = http://localhost:8080
+@userToken = REPLACE_USER_TOKEN
+
+### 초대 코드로 매장 합류 요청
+POST {{baseUrl}}/shop-member
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "inviteCode": "X7A9KQ"
+}

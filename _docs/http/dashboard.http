@@ -1,0 +1,6 @@
+@baseUrl = http://localhost:8080
+@adminToken = REPLACE_ADMIN_TOKEN
+
+### 대시보드 통계 조회 - ADMIN / SUPER_ADMIN
+GET {{baseUrl}}/dashboard/stats
+Authorization: Bearer {{adminToken}}

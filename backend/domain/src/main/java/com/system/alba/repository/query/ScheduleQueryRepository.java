@@ -7,5 +7,5 @@ import java.util.List;
 
 public interface ScheduleQueryRepository {
 
-    List<Schedule> findSchedules(Long shopNo, Long shopMemberNo, LocalDate startDate, LocalDate endDate, long limit);
+    List<Schedule> findSchedules(Long shopNo, Long shopMemberId, LocalDate startDate, LocalDate endDate, long limit);
 }

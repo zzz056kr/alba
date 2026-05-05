@@ -70,7 +70,7 @@ public class ScheduleDto {
     @Setter
     public static class CreateForm {
         @NotNull
-        private Long shopMemberNo;
+        private Long shopMemberId;
 
         @NotNull
         private LocalDate workDate;
@@ -101,7 +101,7 @@ public class ScheduleDto {
         @NotNull
         private LocalDate baseDate;
 
-        private Long shopMemberNo;
+        private Long shopMemberId;
     }
 
     @Getter

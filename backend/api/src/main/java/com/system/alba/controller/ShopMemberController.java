@@ -15,13 +15,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/shop-members")
+@RequestMapping("/shop-member")
 @RequiredArgsConstructor
 public class ShopMemberController {
 
     private final ShopService shopService;
 
-    @PostMapping("/join")
+    @PostMapping
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<ResponseModel<ShopMemberDto.Detail>> joinShop(
             @Valid @RequestBody ShopMemberDto.JoinForm form,

@@ -7,5 +7,5 @@ import java.time.LocalDate;
 
 public interface AttendanceQueryRepository {
 
-    Page<Attendance> findAttendances(Long shopNo, LocalDate startDate, LocalDate endDate, Long shopMemberNo, int page, int size);
+    Page<Attendance> findAttendances(Long shopNo, LocalDate startDate, LocalDate endDate, Long shopMemberId, int page, int size);
 }

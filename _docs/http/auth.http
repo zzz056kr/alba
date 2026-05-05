@@ -1,0 +1,30 @@
+@baseUrl = http://localhost:8080
+@refreshToken = REPLACE_REFRESH_TOKEN
+
+### 회원가입
+POST {{baseUrl}}/auth/join
+Content-Type: application/json
+
+{
+  "id": "join-user",
+  "name": "회원가입 사용자",
+  "password": "Password123!",
+  "email": "join-user@example.com"
+}
+
+### 로그인
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "id": "join-user",
+  "password": "Password123!"
+}
+
+### 토큰 재발급
+POST {{baseUrl}}/auth/refresh
+Cookie: refreshToken={{refreshToken}}
+
+### 로그아웃
+POST {{baseUrl}}/auth/logout
+Cookie: refreshToken={{refreshToken}}

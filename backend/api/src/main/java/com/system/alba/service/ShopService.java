@@ -209,7 +209,7 @@ public class ShopService {
 
     public ShopMemberDto.Detail approveShopMember(
             Long shopId,
-            Long memberId,
+            Long shopMemberId,
             ShopMemberDto.ApproveForm form,
             Authentication authentication
     ) throws ServerException {
@@ -222,7 +222,7 @@ public class ShopService {
 
         Account account = accountService.activeUserCheckByPrincipalName(SERVICE, CATEGORY, principalName);
 
-        ShopMember shopMember = shopMemberRepository.findByNoAndShop_No(memberId, shopId).orElse(null);
+        ShopMember shopMember = shopMemberRepository.findByNoAndShop_No(shopMemberId, shopId).orElse(null);
         if (shopMember == null) {
             throw throwService.throwErrorByCode(SERVICE, CATEGORY, AppResultCode.NOT_FOUND, "RESULT_SHOP_MEMBER_NOT_FOUND");
         }
@@ -290,7 +290,7 @@ public class ShopService {
             throw throwService.throwErrorByCode(SERVICE, CATEGORY, AppResultCode.NOT_FOUND, "RESULT_SHOP_NOT_FOUND");
         }
 
-        ShopMember shopMember = shopMemberRepository.findByNoAndShop_No(form.getShopMemberNo(), shopId).orElse(null);
+        ShopMember shopMember = shopMemberRepository.findByNoAndShop_No(form.getShopMemberId(), shopId).orElse(null);
         if (shopMember == null) {
             throw throwService.throwErrorByCode(SERVICE, CATEGORY, AppResultCode.NOT_FOUND, "RESULT_SHOP_MEMBER_NOT_FOUND");
         }
@@ -350,16 +350,16 @@ public class ShopService {
             endDate = baseDate.withDayOfMonth(baseDate.lengthOfMonth());
         }
 
-        Long targetShopMemberNo = null;
+        Long targetShopMemberId = null;
         if (callerShopMember.getShopRole() == AppType.ShopRole.OWNER) {
-            targetShopMemberNo = params.getShopMemberNo();
+            targetShopMemberId = params.getShopMemberId();
         } else {
-            targetShopMemberNo = callerShopMember.getNo();
+            targetShopMemberId = callerShopMember.getNo();
         }
 
         List<Schedule> schedules = scheduleRepository.findSchedules(
                 shopId,
-                targetShopMemberNo,
+                targetShopMemberId,
                 startDate,
                 endDate,
                 MAX_SCHEDULE_VIEW_ROWS + 1L
@@ -600,14 +600,14 @@ public class ShopService {
             throw throwService.throwErrorByCode(SERVICE, CATEGORY, AppResultCode.FORBIDDEN, "RESULT_FORBIDDEN");
         }
 
-        Long targetShopMemberNo = shopMember.getShopRole() == AppType.ShopRole.OWNER ? null : shopMember.getNo();
+        Long targetShopMemberId = shopMember.getShopRole() == AppType.ShopRole.OWNER ? null : shopMember.getNo();
         LocalDate startDate = params != null ? params.getStartDate() : null;
         LocalDate endDate = params != null ? params.getEndDate() : null;
 
         int page = params != null ? Math.max(params.getPage() - 1, 0) : 0;
         int size = params != null ? params.getSize() : 20;
 
-        var attendancePage = attendanceRepository.findAttendances(shopId, startDate, endDate, targetShopMemberNo, page, size);
+        var attendancePage = attendanceRepository.findAttendances(shopId, startDate, endDate, targetShopMemberId, page, size);
         List<Attendance> attendances = attendancePage.getContent();
         List<AttendanceDto.Summary> summaries = AttendanceDto.Summary.Mapper.INSTANCE.sourceListToDestinationList(attendances);
         enrichAttendanceSummaries(attendances, summaries);

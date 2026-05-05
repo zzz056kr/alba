@@ -17,14 +17,14 @@ public class ScheduleQueryRepositoryImpl implements ScheduleQueryRepository {
     private static final QSchedule schedule = QSchedule.schedule;
 
     @Override
-    public List<Schedule> findSchedules(Long shopNo, Long shopMemberNo, LocalDate startDate, LocalDate endDate, long limit) {
+    public List<Schedule> findSchedules(Long shopNo, Long shopMemberId, LocalDate startDate, LocalDate endDate, long limit) {
         BooleanBuilder where = new BooleanBuilder();
         where.and(schedule.shop.no.eq(shopNo));
         where.and(schedule.workDate.goe(startDate));
         where.and(schedule.workDate.loe(endDate));
 
-        if (shopMemberNo != null) {
-            where.and(schedule.shopMember.no.eq(shopMemberNo));
+        if (shopMemberId != null) {
+            where.and(schedule.shopMember.no.eq(shopMemberId));
         }
 
         return queryFactory

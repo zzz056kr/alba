@@ -21,7 +21,7 @@ public class AttendanceQueryRepositoryImpl implements AttendanceQueryRepository 
     private static final QAttendance attendance = QAttendance.attendance;
 
     @Override
-    public Page<Attendance> findAttendances(Long shopNo, LocalDate startDate, LocalDate endDate, Long shopMemberNo, int page, int size) {
+    public Page<Attendance> findAttendances(Long shopNo, LocalDate startDate, LocalDate endDate, Long shopMemberId, int page, int size) {
         BooleanBuilder where = new BooleanBuilder();
         where.and(attendance.shop.no.eq(shopNo));
 
@@ -33,8 +33,8 @@ public class AttendanceQueryRepositoryImpl implements AttendanceQueryRepository 
             where.and(attendance.workDate.loe(endDate));
         }
 
-        if (shopMemberNo != null) {
-            where.and(attendance.shopMember.no.eq(shopMemberNo));
+        if (shopMemberId != null) {
+            where.and(attendance.shopMember.no.eq(shopMemberId));
         }
 
         Pageable pageable = PageRequest.of(page, size);
