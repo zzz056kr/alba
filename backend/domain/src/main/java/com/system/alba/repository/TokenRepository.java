@@ -1,19 +1,16 @@
 package com.system.alba.repository;
 
 import com.system.alba.model.domain.Token;
+import com.system.alba.repository.query.TokenQueryRepository;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface TokenRepository extends JpaRepository<Token, Long> {
+public interface TokenRepository extends JpaRepository<Token, Long>, TokenQueryRepository {
 
     /**
      * @EntityGraph: Token 조회 시 account 를 LEFT JOIN FETCH 로 함께 로딩한다.
@@ -38,9 +35,4 @@ public interface TokenRepository extends JpaRepository<Token, Long> {
     List<Token> findByAccount_Id(String accountId);
 
     List<Token> findByAccount_No(Long accountNo);
-
-    @Modifying
-    @Query("DELETE FROM Token t WHERE t.revokedYn = true OR t.refreshExpiresAt < :now")
-    int deleteExpiredTokens(@Param("now") LocalDateTime now);
-
 }

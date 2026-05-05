@@ -100,6 +100,8 @@ public class ScheduleDto {
 
         @NotNull
         private LocalDate baseDate;
+
+        private Long shopMemberNo;
     }
 
     @Getter

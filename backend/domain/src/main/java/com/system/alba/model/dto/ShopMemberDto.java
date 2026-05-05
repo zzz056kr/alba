@@ -2,6 +2,7 @@ package com.system.alba.model.dto;
 
 import com.system.alba.common.AppType;
 import com.system.alba.common.GenericMapper;
+import com.system.alba.model.PageListDto;
 import com.system.alba.model.domain.ShopMember;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
@@ -71,7 +72,7 @@ public class ShopMemberDto {
 
     @Getter
     @Setter
-    public static class SearchParams {
+    public static class SearchParams extends PageListDto.Request {
         private List<AppType.EmploymentType> employmentTypes;
         private List<AppType.ShopMemberStatus> statuses;
     }

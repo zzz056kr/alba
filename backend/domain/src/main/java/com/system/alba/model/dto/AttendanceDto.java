@@ -2,6 +2,7 @@ package com.system.alba.model.dto;
 
 import com.system.alba.common.AppType;
 import com.system.alba.common.GenericMapper;
+import com.system.alba.model.PageListDto;
 import com.system.alba.model.domain.Attendance;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
@@ -137,15 +138,9 @@ public class AttendanceDto {
 
     @Getter
     @Setter
-    public static class SearchParams {
+    public static class SearchParams extends PageListDto.Request {
         private LocalDate startDate;
         private LocalDate endDate;
-    }
-
-    @Getter
-    @Setter
-    public static class SearchResponse {
-        private List<Summary> attendances;
     }
 
     @Getter

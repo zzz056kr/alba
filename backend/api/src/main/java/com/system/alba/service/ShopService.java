@@ -3,6 +3,7 @@ package com.system.alba.service;
 import com.system.alba.common.AppResultCode;
 import com.system.alba.common.AppType;
 import com.system.alba.exception.ServerException;
+import com.system.alba.model.PageListDto;
 import com.system.alba.model.domain.Account;
 import com.system.alba.model.domain.Attendance;
 import com.system.alba.model.domain.Schedule;
@@ -27,6 +28,7 @@ import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.UUID;
@@ -36,6 +38,8 @@ import java.util.UUID;
 @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRED)
 public class ShopService {
     private static final String SERVICE = "SHOP";
+    private static final int MAX_REPEAT_DAYS = 90;
+    private static final int MAX_SCHEDULE_VIEW_ROWS = 500;
 
     private final AccountService accountService;
     private final AttendanceRepository attendanceRepository;
@@ -66,9 +70,11 @@ public class ShopService {
     }
 
     @Transactional(readOnly = true)
-    public List<ShopMemberDto.Summary> getShopMembers(Long shopId, ShopMemberDto.SearchParams params) {
-        List<ShopMember> shopMembers = shopMemberRepository.findMembers(shopId, params);
-        return ShopMemberDto.Summary.Mapper.INSTANCE.sourceListToDestinationList(shopMembers);
+    public PageListDto.Response<ShopMemberDto.Summary> getShopMembers(Long shopId, ShopMemberDto.SearchParams params) {
+        var page = shopMemberRepository.findMembers(shopId, params);
+        PageListDto.Response<ShopMemberDto.Summary> response = new PageListDto.Response<>();
+        response.pageToResponse(page, ShopMemberDto.Summary.Mapper.INSTANCE);
+        return response;
     }
 
     public ShopDto.Detail createShop(ShopDto.CreateForm form, Authentication authentication) throws ServerException {
@@ -316,7 +322,22 @@ public class ShopService {
     }
 
     @Transactional(readOnly = true)
-    public ScheduleDto.SearchResponse getSchedules(Long shopId, ScheduleDto.SearchParams params) {
+    public ScheduleDto.SearchResponse getSchedules(Long shopId, ScheduleDto.SearchParams params, Authentication authentication) throws ServerException {
+        final String CATEGORY = "GET_SCHEDULES";
+
+        String principalName = authentication.getName();
+        if (principalName == null) {
+            throw throwService.throwErrorByCode(SERVICE, CATEGORY, AppResultCode.UNAUTHORIZED, "RESULT_UNAUTHORIZED");
+        }
+
+        Account account = accountService.activeUserCheckByPrincipalName(SERVICE, CATEGORY, principalName);
+        ShopMember callerShopMember = shopMemberRepository
+                .findByShop_NoAndAccount_NoAndStatus(shopId, account.getNo(), AppType.ShopMemberStatus.ACTIVE)
+                .orElse(null);
+        if (callerShopMember == null) {
+            throw throwService.throwErrorByCode(SERVICE, CATEGORY, AppResultCode.FORBIDDEN, "RESULT_FORBIDDEN");
+        }
+
         LocalDate baseDate = params.getBaseDate();
         LocalDate startDate;
         LocalDate endDate;
@@ -329,11 +350,24 @@ public class ShopService {
             endDate = baseDate.withDayOfMonth(baseDate.lengthOfMonth());
         }
 
-        List<Schedule> schedules = scheduleRepository.findByShop_NoAndWorkDateBetweenOrderByWorkDateAscStartTimeAscNoAsc(
+        Long targetShopMemberNo = null;
+        if (callerShopMember.getShopRole() == AppType.ShopRole.OWNER) {
+            targetShopMemberNo = params.getShopMemberNo();
+        } else {
+            targetShopMemberNo = callerShopMember.getNo();
+        }
+
+        List<Schedule> schedules = scheduleRepository.findSchedules(
                 shopId,
+                targetShopMemberNo,
                 startDate,
-                endDate
+                endDate,
+                MAX_SCHEDULE_VIEW_ROWS + 1L
         );
+
+        if (schedules.size() > MAX_SCHEDULE_VIEW_ROWS) {
+            throw throwService.throwErrorByCode(SERVICE, CATEGORY, AppResultCode.BAD_REQUEST, "RESULT_INVALID_PARAMETER");
+        }
 
         ScheduleDto.SearchResponse response = new ScheduleDto.SearchResponse();
         response.setViewType(params.getViewType());
@@ -545,7 +579,7 @@ public class ShopService {
     }
 
     @Transactional(readOnly = true)
-    public AttendanceDto.SearchResponse getAttendances(
+    public PageListDto.Response<AttendanceDto.Summary> getAttendances(
             Long shopId,
             AttendanceDto.SearchParams params,
             Authentication authentication
@@ -570,12 +604,17 @@ public class ShopService {
         LocalDate startDate = params != null ? params.getStartDate() : null;
         LocalDate endDate = params != null ? params.getEndDate() : null;
 
-        List<Attendance> attendances = attendanceRepository.findAttendances(shopId, startDate, endDate, targetShopMemberNo);
+        int page = params != null ? Math.max(params.getPage() - 1, 0) : 0;
+        int size = params != null ? params.getSize() : 20;
+
+        var attendancePage = attendanceRepository.findAttendances(shopId, startDate, endDate, targetShopMemberNo, page, size);
+        List<Attendance> attendances = attendancePage.getContent();
         List<AttendanceDto.Summary> summaries = AttendanceDto.Summary.Mapper.INSTANCE.sourceListToDestinationList(attendances);
         enrichAttendanceSummaries(attendances, summaries);
 
-        AttendanceDto.SearchResponse response = new AttendanceDto.SearchResponse();
-        response.setAttendances(summaries);
+        PageListDto.Response<AttendanceDto.Summary> response = new PageListDto.Response<>();
+        response.pageToResponse(attendancePage, AttendanceDto.Summary.Mapper.INSTANCE);
+        response.setList(summaries);
         return response;
     }
 
@@ -627,6 +666,10 @@ public class ShopService {
         }
 
         if (repeatUntil.isBefore(startDate)) {
+            throw throwService.throwErrorByCode(SERVICE, "CREATE_SCHEDULES", AppResultCode.BAD_REQUEST, "RESULT_INVALID_PARAMETER");
+        }
+
+        if (ChronoUnit.DAYS.between(startDate, repeatUntil) > MAX_REPEAT_DAYS) {
             throw throwService.throwErrorByCode(SERVICE, "CREATE_SCHEDULES", AppResultCode.BAD_REQUEST, "RESULT_INVALID_PARAMETER");
         }
 

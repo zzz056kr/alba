@@ -1,6 +1,7 @@
 package com.system.alba.controller;
 
 import com.system.alba.exception.ServerException;
+import com.system.alba.model.PageListDto;
 import com.system.alba.model.ResponseModel;
 import com.system.alba.model.dto.AttendanceDto;
 import com.system.alba.model.dto.ShopDto;
@@ -24,7 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/shops")
+@RequestMapping("/shop")
 @RequiredArgsConstructor
 public class ShopController {
 
@@ -71,7 +72,7 @@ public class ShopController {
 
     @GetMapping("/{shopId}/attendances")
     @PreAuthorize("@shopAuth.isMember(#shopId)")
-    public ResponseEntity<ResponseModel<AttendanceDto.SearchResponse>> getAttendances(
+    public ResponseEntity<ResponseModel<PageListDto.Response<AttendanceDto.Summary>>> getAttendances(
             @PathVariable Long shopId,
             AttendanceDto.SearchParams params,
             Authentication authentication
@@ -94,9 +95,10 @@ public class ShopController {
     @PreAuthorize("@shopAuth.isMember(#shopId)")
     public ResponseEntity<ResponseModel<ScheduleDto.SearchResponse>> getSchedules(
             @PathVariable Long shopId,
-            @Valid ScheduleDto.SearchParams params
-    ) {
-        return ResponseModel.ok(shopService.getSchedules(shopId, params));
+            @Valid ScheduleDto.SearchParams params,
+            Authentication authentication
+    ) throws ServerException {
+        return ResponseModel.ok(shopService.getSchedules(shopId, params, authentication));
     }
 
     @DeleteMapping("/{shopId}/schedules/{scheduleId}")
@@ -118,7 +120,7 @@ public class ShopController {
 
     @GetMapping("/{shopId}/members")
     @PreAuthorize("@shopAuth.isOwner(#shopId)")
-    public ResponseEntity<ResponseModel<List<ShopMemberDto.Summary>>> getShopMembers(
+    public ResponseEntity<ResponseModel<PageListDto.Response<ShopMemberDto.Summary>>> getShopMembers(
             @PathVariable Long shopId,
             ShopMemberDto.SearchParams params
     ) {

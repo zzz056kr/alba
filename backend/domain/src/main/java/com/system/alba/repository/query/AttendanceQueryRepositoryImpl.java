@@ -5,6 +5,10 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.system.alba.model.domain.Attendance;
 import com.system.alba.model.domain.QAttendance;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.support.PageableExecutionUtils;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -17,7 +21,7 @@ public class AttendanceQueryRepositoryImpl implements AttendanceQueryRepository 
     private static final QAttendance attendance = QAttendance.attendance;
 
     @Override
-    public List<Attendance> findAttendances(Long shopNo, LocalDate startDate, LocalDate endDate, Long shopMemberNo) {
+    public Page<Attendance> findAttendances(Long shopNo, LocalDate startDate, LocalDate endDate, Long shopMemberNo, int page, int size) {
         BooleanBuilder where = new BooleanBuilder();
         where.and(attendance.shop.no.eq(shopNo));
 
@@ -33,7 +37,9 @@ public class AttendanceQueryRepositoryImpl implements AttendanceQueryRepository 
             where.and(attendance.shopMember.no.eq(shopMemberNo));
         }
 
-        return queryFactory
+        Pageable pageable = PageRequest.of(page, size);
+
+        List<Attendance> contents = queryFactory
                 .selectFrom(attendance)
                 .leftJoin(attendance.shop).fetchJoin()
                 .leftJoin(attendance.shopMember).fetchJoin()
@@ -41,6 +47,18 @@ public class AttendanceQueryRepositoryImpl implements AttendanceQueryRepository 
                 .leftJoin(attendance.schedule).fetchJoin()
                 .where(where)
                 .orderBy(attendance.workDate.desc(), attendance.clockInAt.desc(), attendance.no.desc())
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
                 .fetch();
+
+        return PageableExecutionUtils.getPage(
+                contents,
+                pageable,
+                () -> queryFactory
+                        .select(attendance.count())
+                        .from(attendance)
+                        .where(where)
+                        .fetchOne()
+        );
     }
 }
