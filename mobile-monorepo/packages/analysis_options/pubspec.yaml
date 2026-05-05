@@ -1,0 +1,11 @@
+name: analysis_options
+publish_to: none
+version: 0.1.0
+description: Shared analyzer/linter rules for the mobile_monorepo workspace.
+
+environment:
+  sdk: ^3.11.5
+
+dependencies:
+  flutter_lints: ^6.0.0
+  lints: ^6.0.0

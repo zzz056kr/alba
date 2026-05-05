@@ -1,0 +1,28 @@
+{
+  "name": "@repo/api-client",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "build": "tsc --project tsconfig.json --noEmit && mkdir -p dist && : > dist/.keep",
+    "lint": "eslint .",
+    "typecheck": "tsc --project tsconfig.json --noEmit"
+  },
+  "exports": {
+    "./*": "./*"
+  },
+  "typesVersions": {
+    "*": {
+      "*": ["./*"]
+    }
+  },
+  "peerDependencies": {
+    "axios": "^1.0.0",
+    "zustand": "^5.0.0"
+  },
+  "dependencies": {
+    "@repo/common": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5"
+  }
+}

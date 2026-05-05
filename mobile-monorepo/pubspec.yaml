@@ -1,0 +1,9 @@
+name: mobile_monorepo
+publish_to: none
+
+environment:
+  sdk: ^3.11.5
+
+dev_dependencies:
+  flutter_lints: ^5.0.0
+  melos: ^6.3.2

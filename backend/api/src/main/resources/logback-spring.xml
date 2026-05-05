@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <property name="SERVICE_NAME" value="alba" />
+    <property name="LOG_DIR" value="${LOG_DIR:-/Users/imac/git/donghwa/base-next-spring/logs}"/>
+    <property name="LOG_PATH" value="${LOG_DIR}/${SERVICE_NAME}.log"/>
+
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}</file>
+        <append>true</append>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_DIR}/${SERVICE_NAME}-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>100MB</maxFileSize>
+            <maxHistory>180</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <charset>UTF-8</charset>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [%-5level] %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- test,local -->
+    <springProfile name="test,local">
+        <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <charset>UTF-8</charset>
+                <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %magenta([%thread]) %highlight([%-5level]) %logger{36} - %msg%n</pattern>
+            </encoder>
+        </appender>
+
+        <!-- P6Spy -->
+        <logger name="p6spy" level="info" />
+
+        <!-- Application -->
+        <logger name="com.system.alba" level="debug" />
+
+        <root level="info" additivity="false">
+            <appender-ref ref="STDOUT" />
+        </root>
+    </springProfile>
+
+    <!-- development -->
+    <springProfile name="development">
+        <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <charset>UTF-8</charset>
+                <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %magenta([%thread]) %highlight([%-5level]) %logger{36} - %msg%n</pattern>
+            </encoder>
+        </appender>
+
+        <!-- P6Spy -->
+        <logger name="p6spy" level="info" />
+
+        <!-- Application -->
+        <logger name="com.system.alba" level="debug" />
+
+        <root level="info" additivity="false">
+            <appender-ref ref="STDOUT" />
+            <appender-ref ref="FILE" />
+        </root>
+    </springProfile>
+
+    <!-- production -->
+    <springProfile name="prod">
+        <logger name="p6spy" level="warn" />
+        <logger name="com.system.alba" level="info" />
+
+        <root level="info" additivity="false">
+            <appender-ref ref="FILE" />
+        </root>
+    </springProfile>
+
+</configuration>

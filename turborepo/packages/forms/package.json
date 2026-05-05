@@ -1,0 +1,32 @@
+{
+  "name": "@repo/forms",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "build": "tsc --project tsconfig.json --noEmit && mkdir -p dist && : > dist/.keep",
+    "lint": "eslint .",
+    "typecheck": "tsc --project tsconfig.json --noEmit"
+  },
+  "exports": {
+    "./*": "./*"
+  },
+  "typesVersions": {
+    "*": {
+      "*": ["./*"]
+    }
+  },
+  "dependencies": {
+    "@repo/common": "*",
+    "@repo/ui": "*"
+  },
+  "peerDependencies": {
+    "@radix-ui/react-slot": "^1.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-hook-form": "^7.0.0",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5"
+  }
+}

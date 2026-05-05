@@ -1,0 +1,14 @@
+{
+  "extends": "@repo/tsconfig/react-library.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@repo/common/*": ["../common/*"],
+      "@repo/ui/*": ["./*"],
+      "@repo/forms/*": ["../forms/*"],
+      "@repo/api-client/*": ["../api-client/*"]
+    }
+  },
+  "include": ["**/*.ts", "**/*.tsx", "**/*.d.ts"],
+  "exclude": ["node_modules"]
+}

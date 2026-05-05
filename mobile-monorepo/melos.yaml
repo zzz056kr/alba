@@ -1,0 +1,58 @@
+name: mobile_monorepo
+
+packages:
+  - apps/**
+  - packages/**
+
+scripts:
+  bootstrap:
+    run: melos bootstrap
+    description: Sync workspace dependencies (= npm install).
+
+  pub:get:
+    run: melos exec -- "flutter pub get"
+    description: Run `flutter pub get` in every package.
+
+  clean:
+    run: melos exec -- "flutter clean"
+    description: Run `flutter clean` in every package.
+
+  analyze:
+    run: melos exec -c 1 -- "flutter analyze"
+    description: Run static analysis in all packages (= turbo lint).
+
+  format:
+    run: melos exec -- "dart format --set-exit-if-changed ."
+    description: Verify Dart formatting (CI-safe, fails on diffs).
+
+  format:fix:
+    run: melos exec -- "dart format ."
+    description: Apply Dart formatter in place.
+
+  test:
+    run: melos exec --dir-exists="test" --concurrency=1 --fail-fast -- "flutter test"
+    description: Run tests only in packages that define a test directory.
+
+  gen:
+    run: melos exec --concurrency=1 --depends-on="build_runner" -- "dart run build_runner build --delete-conflicting-outputs"
+    description: Run code generation (freezed, json_serializable) in every package that uses build_runner.
+
+  gen:watch:
+    run: melos exec --concurrency=1 --depends-on="build_runner" -- "dart run build_runner watch --delete-conflicting-outputs"
+    description: Watch mode code generation.
+
+  test:packages:
+    run: melos exec --ignore="customer_app" --dir-exists="test" --concurrency=1 --fail-fast -- "flutter test"
+    description: Run tests only in shared packages that define a test directory.
+
+  build:apk:
+    run: melos exec --scope="customer_app" -- "flutter build apk --release"
+    description: Build the customer_app Android APK (release).
+
+  build:ipa:
+    run: melos exec --scope="customer_app" -- "flutter build ipa --release"
+    description: Build the customer_app iOS IPA (release).
+
+  run:dev:
+    run: melos exec --scope="customer_app" -- "flutter run"
+    description: Launch customer_app in dev mode (= turbo dev).

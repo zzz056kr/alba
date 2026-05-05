@@ -1,0 +1,22 @@
+name: api_client
+publish_to: none
+version: 0.1.0
+
+environment:
+  sdk: ^3.11.5
+
+dependencies:
+  common:
+    path: ../common
+  dio: ^5.8.0+1
+  freezed_annotation: ^2.4.4
+  json_annotation: ^4.9.0
+  meta: ^1.16.0
+
+dev_dependencies:
+  analysis_options:
+    path: ../analysis_options
+  build_runner: ^2.4.13
+  freezed: ^2.5.7
+  json_serializable: ^6.8.0
+  lints: ^6.0.0

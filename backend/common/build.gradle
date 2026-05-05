@@ -1,0 +1,30 @@
+plugins {
+    id 'java-library'
+    id 'io.spring.dependency-management'
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.boot:spring-boot-dependencies:3.3.2"
+    }
+}
+
+dependencies {
+    // ApplicationContextHolder: ApplicationContextAware 사용
+    api 'org.springframework.boot:spring-boot-starter'
+    // SecurityUtils: Authentication, UserDetails 등 public API 노출
+    api 'org.springframework.boot:spring-boot-starter-security'
+    // PageListDto: Page<T>, Sort를 public API로 노출 (data-jpa 전체 불필요)
+    api 'org.springframework.data:spring-data-commons'
+
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+    implementation 'org.apache.commons:commons-lang3'
+
+    api "org.mapstruct:mapstruct:${mapstructVersion}"
+    annotationProcessor "org.mapstruct:mapstruct-processor:${mapstructVersion}"
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}

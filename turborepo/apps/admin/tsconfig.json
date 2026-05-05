@@ -1,0 +1,23 @@
+{
+  "extends": "@repo/tsconfig/nextjs.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "incremental": true,
+    "paths": {
+      "@/*": ["./*"],
+      "@repo/common/*": ["../../packages/common/*"],
+      "@repo/ui/*": ["../../packages/ui/*"],
+      "@repo/forms/*": ["../../packages/forms/*"],
+      "@repo/api-client/*": ["../../packages/api-client/*"]
+    }
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    "src/types/**/*.d.ts",
+    "../../packages/common/types/api.d.ts"
+  ],
+  "exclude": ["node_modules"]
+}

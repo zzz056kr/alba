@@ -1,0 +1,22 @@
+{
+  "name": "@repo/eslint-config",
+  "version": "0.0.1",
+  "private": true,
+  "exports": {
+    "./base": "./base.js",
+    "./next": "./next.js",
+    "./react": "./react.js"
+  },
+  "dependencies": {
+    "@eslint/eslintrc": "^3.3.1"
+  },
+  "peerDependencies": {
+    "eslint": "^9.0.0",
+    "eslint-config-next": "^15.0.0"
+  },
+  "scripts": {
+    "build": "node -e \"require('fs').mkdirSync('dist',{recursive:true});require('fs').writeFileSync('dist/.keep','')\"",
+    "lint": "node -e \"process.exit(0)\"",
+    "typecheck": "node -e \"process.exit(0)\""
+  }
+}

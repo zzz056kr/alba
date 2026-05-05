@@ -1,0 +1,25 @@
+{
+  "name": "@repo/common",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "build": "tsc --project tsconfig.json --noEmit && mkdir -p dist && : > dist/.keep",
+    "lint": "eslint .",
+    "typecheck": "tsc --project tsconfig.json --noEmit"
+  },
+  "exports": {
+    "./*": "./*"
+  },
+  "typesVersions": {
+    "*": {
+      "*": ["./*"]
+    }
+  },
+  "devDependencies": {
+    "@types/react": "^19",
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "dayjs": "^1.11.20"
+  }
+}

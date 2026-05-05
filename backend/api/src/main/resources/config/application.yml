@@ -1,0 +1,91 @@
+spring:
+  profiles:
+    active: local
+  config:
+    import:
+      - optional:classpath:config/application-oauth.yml
+      - optional:classpath:config/application-mail.yml
+      - classpath:config/application-code.yml
+
+
+# Token expiration settings
+app:
+  base-url: http://localhost:8080
+  auth:
+    access-expires-seconds: 3600    # 1시간 (1 * 60 * 60)
+    refresh-expires-seconds: 604800 # 7일 (7 * 24 * 60 * 60)
+    refresh-token-cookie-name: refresh_token_test
+  cache:
+    type: memory  # memory 또는 redis
+  async:
+    core-pool-size: 2
+    max-pool-size: 10
+    queue-capacity: 100
+  scheduler:
+    token-cleanup-cron: "0 0 3 * * *"
+
+---
+# Local profile (MariaDB)
+spring:
+  config:
+    activate:
+      on-profile: local
+  datasource:
+    url: jdbc:mariadb://localhost:3306/test
+    username: root
+    password: root
+    driver-class-name: org.mariadb.jdbc.Driver
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+  jpa:
+    database: mysql
+    database-platform: org.hibernate.dialect.MariaDBDialect
+    hibernate:
+      ddl-auto: none
+      naming:
+        physical-strategy: com.system.alba.jpa.CustomPhysicalStrategy
+    show-sql: false
+    properties:
+      hibernate:
+        order_inserts: true
+        order_updates: true
+        dialect: org.hibernate.dialect.MariaDBDialect
+        format_sql: false
+    open-in-view: false
+
+---
+# Development profile (MariaDB)
+spring:
+  config:
+    activate:
+      on-profile: development
+  datasource:
+    url: jdbc:mariadb://localhost:3306/test_dev
+    username: root
+    password:
+    driver-class-name: org.mariadb.jdbc.Driver
+
+  jpa:
+    database: mysql
+    database-platform: org.hibernate.dialect.MariaDBDialect
+    hibernate:
+      ddl-auto: none
+      naming:
+        physical-strategy: com.system.alba.jpa.CustomPhysicalStrategy
+    show-sql: true
+    properties:
+      hibernate:
+        order_inserts: true
+        order_updates: true
+        dialect: org.hibernate.dialect.MariaDBDialect
+        format_sql: true
+    open-in-view: false
+
+logging:
+  level:
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
