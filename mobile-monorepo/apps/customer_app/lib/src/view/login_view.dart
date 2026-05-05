@@ -20,17 +20,9 @@ import '../widget/social_marks.dart';
 class LoginView extends HookConsumerWidget {
   const LoginView({super.key});
 
-  static const _loginRoles = <({String label, String title, String subtitle})>[
-    (
-      label: '사장',
-      title: '사장님 로그인',
-      subtitle: '매장 운영과 관리를 위해 로그인해주세요.',
-    ),
-    (
-      label: '직원',
-      title: '직원 로그인',
-      subtitle: '근무와 개인 업무를 이어서 진행하려면 로그인해주세요.',
-    ),
+  static const _loginRoles = <({String label, String title})>[
+    (label: '사장', title: '사장님 로그인'),
+    (label: '직원', title: '직원 로그인'),
   ];
 
   @override
@@ -148,7 +140,6 @@ class LoginView extends HookConsumerWidget {
 
     return AuthScaffold(
       title: selectedRole.title,
-      subtitle: selectedRole.subtitle,
       child: Form(
         key: formKey,
         autovalidateMode: state.showValidation

@@ -56,6 +56,92 @@ public interface AppType {
 
     @Getter
     @RequiredArgsConstructor
+    enum ShopStatus {
+        ACTIVE("ACTIVE", "운영 중"),
+        CLOSED("CLOSED", "운영 종료"),
+        SUSPENDED("SUSPENDED", "정지");
+
+        private final String code;
+        private final String title;
+    }
+
+    @Getter
+    @RequiredArgsConstructor
+    enum ShopRole {
+        OWNER("OWNER", "사장"),
+        MANAGER("MANAGER", "매니저"),
+        STAFF("STAFF", "직원");
+
+        private final String code;
+        private final String title;
+    }
+
+    @Getter
+    @RequiredArgsConstructor
+    enum EmploymentType {
+        REGULAR("REGULAR", "정직원"),
+        DAILY("DAILY", "일일대타");
+
+        private final String code;
+        private final String title;
+    }
+
+    @Getter
+    @RequiredArgsConstructor
+    enum ShopMemberStatus {
+        PENDING("PENDING", "대기"),
+        ACTIVE("ACTIVE", "활성"),
+        INACTIVE("INACTIVE", "비활성"),
+        QUIT("QUIT", "퇴사");
+
+        private final String code;
+        private final String title;
+    }
+
+    @Getter
+    @RequiredArgsConstructor
+    enum ScheduleStatus {
+        SCHEDULED("SCHEDULED", "예정"),
+        CANCELED("CANCELED", "취소");
+
+        private final String code;
+        private final String title;
+    }
+
+    @Getter
+    @RequiredArgsConstructor
+    enum AttendanceAuthType {
+        QR_GPS("QR_GPS", "QR+GPS"),
+        MANUAL("MANUAL", "수기입력");
+
+        private final String code;
+        private final String title;
+    }
+
+    @Getter
+    @RequiredArgsConstructor
+    enum ClockInStatus {
+        NORMAL("NORMAL", "정상"),
+        LATE("LATE", "지각"),
+        EXCEPTION("EXCEPTION", "예외");
+
+        private final String code;
+        private final String title;
+    }
+
+    @Getter
+    @RequiredArgsConstructor
+    enum ClockOutStatus {
+        NORMAL("NORMAL", "정상"),
+        EARLY_LEAVE("EARLY_LEAVE", "조퇴"),
+        EXCEPTION("EXCEPTION", "예외");
+
+        private final String code;
+        private final String title;
+    }
+
+    @Getter
+    @RequiredArgsConstructor
     enum EmailAuthType {
         JOIN("JOIN", "회원가입"),
         PASSWORD_RESET("PASSWORD_RESET", "비밀번호 재설정");

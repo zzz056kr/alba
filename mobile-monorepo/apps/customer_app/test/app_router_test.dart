@@ -39,6 +39,7 @@ void main() {
   ) async {
     final container = await _pumpApp(tester, sharedPreferences: const {});
     final router = container.read(appRouterProvider);
+    addTearDown(router.dispose);
 
     expect(find.text('사장님 로그인'), findsOneWidget);
     expect(find.text('사장 로그인'), findsAtLeastNWidgets(1));
@@ -69,6 +70,7 @@ void main() {
       },
     );
     final router = container.read(appRouterProvider);
+    addTearDown(router.dispose);
 
     expect(find.textContaining('안녕하세요, base-user'), findsOneWidget);
     expect(find.text('마이페이지'), findsOneWidget);
