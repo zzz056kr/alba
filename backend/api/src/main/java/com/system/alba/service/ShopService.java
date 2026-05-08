@@ -9,12 +9,15 @@ import com.system.alba.model.domain.Attendance;
 import com.system.alba.model.domain.Schedule;
 import com.system.alba.model.domain.Shop;
 import com.system.alba.model.domain.ShopMember;
+import com.system.alba.model.domain.ShopNotice;
 import com.system.alba.model.dto.AttendanceDto;
 import com.system.alba.model.dto.ShopDto;
 import com.system.alba.model.dto.ScheduleDto;
 import com.system.alba.model.dto.ShopMemberDto;
+import com.system.alba.model.dto.ShopNoticeDto;
 import com.system.alba.repository.AttendanceRepository;
 import com.system.alba.repository.ScheduleRepository;
+import com.system.alba.repository.ShopNoticeRepository;
 import com.system.alba.repository.ShopRepository;
 import com.system.alba.repository.ShopMemberRepository;
 import com.system.alba.service.common.ThrowService;
@@ -44,6 +47,7 @@ public class ShopService {
     private final AccountService accountService;
     private final AttendanceRepository attendanceRepository;
     private final ScheduleRepository scheduleRepository;
+    private final ShopNoticeRepository shopNoticeRepository;
     private final ShopRepository shopRepository;
     private final ShopMemberRepository shopMemberRepository;
     private final ShopGeocodingService shopGeocodingService;
@@ -116,6 +120,37 @@ public class ShopService {
         return ShopDto.Detail.Mapper.INSTANCE.sourceToDestination(shop);
     }
 
+    public ShopNoticeDto.Detail createShopNotice(
+            Long shopId,
+            ShopNoticeDto.CreateForm form,
+            Authentication authentication
+    ) throws ServerException {
+        final String CATEGORY = "CREATE_SHOP_NOTICE";
+
+        String principalName = authentication.getName();
+        if (principalName == null) {
+            throw throwService.throwErrorByCode(SERVICE, CATEGORY, AppResultCode.UNAUTHORIZED, "RESULT_UNAUTHORIZED");
+        }
+
+        Account account = accountService.activeUserCheckByPrincipalName(SERVICE, CATEGORY, principalName);
+
+        Shop shop = shopRepository.findById(shopId).orElse(null);
+        if (shop == null) {
+            throw throwService.throwErrorByCode(SERVICE, CATEGORY, AppResultCode.NOT_FOUND, "RESULT_SHOP_NOT_FOUND");
+        }
+
+        ShopNotice notice = new ShopNotice();
+        ShopNoticeDto.CreateForm.Mapper.INSTANCE.updateSourceToDestination(form, notice);
+        notice.setShop(shop);
+        notice.setPinnedYn("Y".equals(form.getPinnedYn()) ? "Y" : "N");
+        notice.setStatus(AppType.ShopNoticeStatus.ACTIVE);
+        notice.setCreatedNo(account.getNo());
+        notice.setModifiedNo(account.getNo());
+        notice = shopNoticeRepository.save(notice);
+
+        return ShopNoticeDto.Detail.Mapper.INSTANCE.sourceToDestination(notice);
+    }
+
     @Transactional(readOnly = true)
     public ShopDto.Detail getShop(Long shopId) throws ServerException {
         final String CATEGORY = "GET_SHOP";
@@ -126,6 +161,23 @@ public class ShopService {
         }
 
         return ShopDto.Detail.Mapper.INSTANCE.sourceToDestination(shop);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ShopNoticeDto.Summary> getShopNotices(Long shopId) throws ServerException {
+        final String CATEGORY = "GET_SHOP_NOTICES";
+
+        Shop shop = shopRepository.findById(shopId).orElse(null);
+        if (shop == null) {
+            throw throwService.throwErrorByCode(SERVICE, CATEGORY, AppResultCode.NOT_FOUND, "RESULT_SHOP_NOT_FOUND");
+        }
+
+        List<ShopNotice> notices = shopNoticeRepository.findAllByShop_NoAndStatusOrderByPinnedYnDescCreatedAtDesc(
+                shopId,
+                AppType.ShopNoticeStatus.ACTIVE
+        );
+
+        return ShopNoticeDto.Summary.Mapper.INSTANCE.sourceListToDestinationList(notices);
     }
 
     public ShopDto.Detail editShop(Long shopId, ShopDto.EditForm form, Authentication authentication) throws ServerException {

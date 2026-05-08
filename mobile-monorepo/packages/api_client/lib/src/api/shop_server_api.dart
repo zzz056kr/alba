@@ -75,6 +75,43 @@ class ShopServerApi implements ShopApi {
   }
 
   @override
+  Future<ResponseModel<List<ShopNoticeResponse>>> getShopNotices(
+    int shopId, {
+    ApiRequestOptions? options,
+  }) async {
+    final response = await _dio.get<Map<String, dynamic>>(
+      '/shop/$shopId/notices',
+      options: options?.toDioOptions(),
+    );
+
+    return ResponseModel<List<ShopNoticeResponse>>.fromJson(
+      response.data ?? const <String, dynamic>{},
+      (value) {
+        final list = value is List ? value : const <dynamic>[];
+        return list.map(ShopNoticeResponse.fromJson).toList();
+      },
+    );
+  }
+
+  @override
+  Future<ResponseModel<ShopNoticeResponse>> createShopNotice(
+    int shopId,
+    CreateShopNoticeRequest request, {
+    ApiRequestOptions? options,
+  }) async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/shop/$shopId/notices',
+      data: request.toJson(),
+      options: options?.toDioOptions(),
+    );
+
+    return ResponseModel<ShopNoticeResponse>.fromJson(
+      response.data ?? const <String, dynamic>{},
+      (value) => ShopNoticeResponse.fromJson(value),
+    );
+  }
+
+  @override
   Future<ResponseModel<List<MyShopMembershipResponse>>> getMyShops({
     ApiRequestOptions? options,
   }) async {

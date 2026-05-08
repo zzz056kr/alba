@@ -6,6 +6,7 @@ import com.system.alba.model.ResponseModel;
 import com.system.alba.model.dto.AttendanceDto;
 import com.system.alba.model.dto.ShopDto;
 import com.system.alba.model.dto.ShopMemberDto;
+import com.system.alba.model.dto.ShopNoticeDto;
 import com.system.alba.model.dto.ScheduleDto;
 import com.system.alba.service.ShopService;
 import jakarta.validation.Valid;
@@ -38,6 +39,16 @@ public class ShopController {
             Authentication authentication
     ) throws ServerException {
         return ResponseModel.ok(shopService.createShop(form, authentication));
+    }
+
+    @PostMapping("/{shopId}/notices")
+    @PreAuthorize("@shopAuth.isOwner(#shopId)")
+    public ResponseEntity<ResponseModel<ShopNoticeDto.Detail>> createShopNotice(
+            @PathVariable Long shopId,
+            @Valid @RequestBody ShopNoticeDto.CreateForm form,
+            Authentication authentication
+    ) throws ServerException {
+        return ResponseModel.ok(shopService.createShopNotice(shopId, form, authentication));
     }
 
     @PostMapping("/{shopId}/schedules")
@@ -126,6 +137,14 @@ public class ShopController {
     @PreAuthorize("@shopAuth.isMember(#shopId)")
     public ResponseEntity<ResponseModel<ShopDto.Detail>> getShop(@PathVariable Long shopId) throws ServerException {
         return ResponseModel.ok(shopService.getShop(shopId));
+    }
+
+    @GetMapping("/{shopId}/notices")
+    @PreAuthorize("@shopAuth.isMember(#shopId)")
+    public ResponseEntity<ResponseModel<List<ShopNoticeDto.Summary>>> getShopNotices(
+            @PathVariable Long shopId
+    ) throws ServerException {
+        return ResponseModel.ok(shopService.getShopNotices(shopId));
     }
 
     @GetMapping("/{shopId}/members")

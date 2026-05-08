@@ -40,6 +40,27 @@ class ShopService {
     return _requireData(response);
   }
 
+  Future<List<ShopNoticeResponse>> getShopNotices(
+    int shopId, {
+    ApiRequestOptions? options,
+  }) async {
+    final response = await _api.getShopNotices(shopId, options: options);
+    return _requireData(response);
+  }
+
+  Future<ShopNoticeResponse> createShopNotice(
+    int shopId,
+    CreateShopNoticeRequest request, {
+    ApiRequestOptions? options,
+  }) async {
+    final response = await _api.createShopNotice(
+      shopId,
+      request,
+      options: options,
+    );
+    return _requireData(response);
+  }
+
   Future<ShopMemberPageResponse> getShopMembers(
     int shopId, {
     ApiRequestOptions? options,

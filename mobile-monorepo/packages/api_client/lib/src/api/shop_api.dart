@@ -21,6 +21,17 @@ abstract class ShopApi {
     ApiRequestOptions? options,
   });
 
+  Future<ResponseModel<List<ShopNoticeResponse>>> getShopNotices(
+    int shopId, {
+    ApiRequestOptions? options,
+  });
+
+  Future<ResponseModel<ShopNoticeResponse>> createShopNotice(
+    int shopId,
+    CreateShopNoticeRequest request, {
+    ApiRequestOptions? options,
+  });
+
   Future<ResponseModel<List<MyShopMembershipResponse>>> getMyShops({
     ApiRequestOptions? options,
   });

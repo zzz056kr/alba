@@ -6,6 +6,8 @@ import 'mock_utils.dart';
 
 class MockShopApi implements ShopApi {
   static final List<ShopResponse> _shops = <ShopResponse>[];
+  static final Map<int, List<ShopNoticeResponse>> _shopNotices =
+      <int, List<ShopNoticeResponse>>{};
 
   @override
   Future<ResponseModel<ShopMemberPageResponse>> getShopMembers(
@@ -87,6 +89,51 @@ class MockShopApi implements ShopApi {
   }
 
   @override
+  Future<ResponseModel<List<ShopNoticeResponse>>> getShopNotices(
+    int shopId, {
+    ApiRequestOptions? options,
+  }) {
+    final notices = _shopNotices[shopId] ?? const <ShopNoticeResponse>[];
+    return mockResponse(
+      ResponseModel<List<ShopNoticeResponse>>(
+        code: 'SUCCESS',
+        message: 'ok',
+        data: notices,
+      ),
+    );
+  }
+
+  @override
+  Future<ResponseModel<ShopNoticeResponse>> createShopNotice(
+    int shopId,
+    CreateShopNoticeRequest request, {
+    ApiRequestOptions? options,
+  }) {
+    final notice = ShopNoticeResponse(
+      no: DateTime.now().millisecondsSinceEpoch,
+      shopNo: shopId,
+      title: request.title,
+      content: request.content,
+      pinnedYn: request.pinnedYn,
+      status: 'ACTIVE',
+      createdAt: DateTime.now().toIso8601String(),
+    );
+    final notices = _shopNotices.putIfAbsent(shopId, () => <ShopNoticeResponse>[]);
+    if (request.pinnedYn == 'Y') {
+      notices.insert(0, notice);
+    } else {
+      notices.add(notice);
+    }
+    return mockResponse(
+      ResponseModel<ShopNoticeResponse>(
+        code: 'SUCCESS',
+        message: 'ok',
+        data: notice,
+      ),
+    );
+  }
+
+  @override
   Future<ResponseModel<List<MyShopMembershipResponse>>> getMyShops({
     ApiRequestOptions? options,
   }) {
@@ -158,6 +205,19 @@ class MockShopApi implements ShopApi {
     _shops
       ..removeWhere((item) => item.no == shop.no)
       ..add(shop);
+    _shopNotices.putIfAbsent(
+      shop.no,
+      () => <ShopNoticeResponse>[
+        const ShopNoticeResponse(
+          no: 1,
+          shopNo: 1,
+          title: '첫 공지',
+          content: '출근 전 공지사항을 꼭 확인해주세요.',
+          pinnedYn: 'Y',
+          status: 'ACTIVE',
+        ),
+      ],
+    );
 
     return mockResponse(
       ResponseModel<ShopResponse>(code: 'SUCCESS', message: 'ok', data: shop),

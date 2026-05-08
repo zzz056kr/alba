@@ -110,6 +110,17 @@ public interface AppType {
 
     @Getter
     @RequiredArgsConstructor
+    enum ShopNoticeStatus {
+        ACTIVE("ACTIVE", "노출"),
+        HIDDEN("HIDDEN", "숨김"),
+        DELETED("DELETED", "삭제");
+
+        private final String code;
+        private final String title;
+    }
+
+    @Getter
+    @RequiredArgsConstructor
     enum AttendanceAuthType {
         QR_GPS("QR_GPS", "QR+GPS"),
         MANUAL("MANUAL", "수기입력");

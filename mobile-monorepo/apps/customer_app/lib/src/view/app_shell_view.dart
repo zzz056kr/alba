@@ -463,6 +463,7 @@ class _ShopDetailView extends ConsumerWidget {
     final pendingMembers = membership.shopRole == 'OWNER'
         ? ref.watch(pendingShopMembersProvider(membership.shop.no))
         : null;
+    final notices = ref.watch(shopNoticesProvider(membership.shop.no));
 
     return _ShellList(
       children: [
@@ -548,6 +549,12 @@ class _ShopDetailView extends ConsumerWidget {
                   inviteCode: shop.inviteCode,
                   qrCodeValue: shop.qrCodeValue,
                 ),
+                const SizedBox(height: 12),
+                _NoticesCard(
+                  shopId: membership.shop.no,
+                  isOwner: membership.shopRole == 'OWNER',
+                  notices: notices,
+                ),
                 if (pendingMembers != null) ...[
                   const SizedBox(height: 12),
                   _PendingMembersCard(
@@ -562,6 +569,273 @@ class _ShopDetailView extends ConsumerWidget {
         const SizedBox(height: 18),
         _BottomActions(onMyPage: onMyPage, onLogout: onLogout),
       ],
+    );
+  }
+}
+
+class _NoticesCard extends ConsumerStatefulWidget {
+  const _NoticesCard({
+    required this.shopId,
+    required this.isOwner,
+    required this.notices,
+  });
+
+  final int shopId;
+  final bool isOwner;
+  final AsyncValue<List<ShopNoticeResponse>> notices;
+
+  @override
+  ConsumerState<_NoticesCard> createState() => _NoticesCardState();
+}
+
+class _NoticesCardState extends ConsumerState<_NoticesCard> {
+  late final TextEditingController _titleController;
+  late final TextEditingController _contentController;
+  bool _pinned = false;
+  bool _isSubmitting = false;
+  bool _showComposer = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _titleController = TextEditingController();
+    _contentController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _contentController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _createNotice() async {
+    final title = _titleController.text.trim();
+    final content = _contentController.text.trim();
+    if (title.isEmpty || content.isEmpty) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text('공지 제목과 내용을 입력해주세요.'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      return;
+    }
+
+    setState(() {
+      _isSubmitting = true;
+    });
+
+    try {
+      await ref
+          .read(shopServiceProvider)
+          .createShopNotice(
+            widget.shopId,
+            CreateShopNoticeRequest(
+              title: title,
+              content: content,
+              pinnedYn: _pinned ? 'Y' : 'N',
+            ),
+          );
+      ref.invalidate(shopNoticesProvider(widget.shopId));
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _titleController.clear();
+        _contentController.clear();
+        _pinned = false;
+        _showComposer = false;
+      });
+    } on DioException catch (error) {
+      String message = '공지사항 등록에 실패했습니다.';
+      final data = error.response?.data;
+      if (data is Map) {
+        final responseMessage = data['message'];
+        final errorMessage = data['error'];
+        if (responseMessage is String && responseMessage.isNotEmpty) {
+          message = responseMessage;
+        } else if (errorMessage is String && errorMessage.isNotEmpty) {
+          message = errorMessage;
+        }
+      }
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(message),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _Panel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '공지사항',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              if (widget.isOwner)
+                OutlinedButton(
+                  onPressed: _isSubmitting
+                      ? null
+                      : () {
+                          setState(() {
+                            _showComposer = !_showComposer;
+                          });
+                        },
+                  child: Text(_showComposer ? '닫기' : '공지 작성'),
+                ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          if (_showComposer && widget.isOwner) ...[
+            TextField(
+              controller: _titleController,
+              decoration: const InputDecoration(labelText: '공지 제목'),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: _contentController,
+              maxLines: 4,
+              decoration: const InputDecoration(
+                labelText: '공지 내용',
+                alignLabelWithHint: true,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Checkbox(
+                  value: _pinned,
+                  onChanged: _isSubmitting
+                      ? null
+                      : (value) {
+                          setState(() {
+                            _pinned = value ?? false;
+                          });
+                        },
+                ),
+                const Text('상단 고정'),
+              ],
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1F6F78),
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size.fromHeight(48),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                onPressed: _isSubmitting ? null : _createNotice,
+                child: Text(_isSubmitting ? '등록 중...' : '공지 등록'),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+          widget.notices.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (error, _) => Text('$error'),
+            data: (items) {
+              if (items.isEmpty) {
+                return Text(
+                  '등록된 공지사항이 없습니다.',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(color: const Color(0xFF6B787D)),
+                );
+              }
+
+              return Column(
+                children: [
+                  for (final item in items) ...[
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: item.isPinned
+                            ? const Color(0xFFF8FBFF)
+                            : const Color(0xFFFCFBF8),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: item.isPinned
+                              ? const Color(0xFFDCE7F6)
+                              : const Color(0xFFE7E1D7),
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              if (item.isPinned) ...[
+                                const _RoleBadge(
+                                  label: '고정',
+                                  backgroundColor: Color(0xFFE6F0FF),
+                                  foregroundColor: Color(0xFF2F5BBA),
+                                ),
+                                const SizedBox(width: 8),
+                              ],
+                              Expanded(
+                                child: Text(
+                                  item.title,
+                                  style: Theme.of(context).textTheme.titleSmall
+                                      ?.copyWith(fontWeight: FontWeight.w800),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            item.content,
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(height: 1.5),
+                          ),
+                          if ((item.createdAt ?? '').isNotEmpty) ...[
+                            const SizedBox(height: 10),
+                            Text(
+                              item.createdAt!,
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(color: const Color(0xFF7A878C)),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    if (item != items.last) const SizedBox(height: 10),
+                  ],
+                ],
+              );
+            },
+          ),
+        ],
+      ),
     );
   }
 }

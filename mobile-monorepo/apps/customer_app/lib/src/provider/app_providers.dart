@@ -153,6 +153,11 @@ final pendingShopMembersProvider =
       return response.list ?? const <ShopMemberSummaryResponse>[];
     });
 
+final shopNoticesProvider =
+    FutureProvider.family<List<ShopNoticeResponse>, int>((ref, shopId) {
+      return ref.watch(shopServiceProvider).getShopNotices(shopId);
+    });
+
 final authFlowServiceProvider = Provider<AuthFlowService>((ref) {
   final appConfig = ref.watch(appConfigProvider);
   final authService = ref.watch(authServiceProvider);

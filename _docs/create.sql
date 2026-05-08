@@ -150,3 +150,18 @@ CREATE TABLE alba.t_attendance (
     FOREIGN KEY (schedule_no) REFERENCES t_schedule (no) ON DELETE SET NULL,
     INDEX idx_attendance_date (shop_no, work_date)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT '실제 출퇴근 기록';
+
+CREATE TABLE alba.t_shop_notice (
+    no                      BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '공지사항 번호',
+    shop_no                 BIGINT NOT NULL COMMENT '매장 번호 (FK)',
+    title                   VARCHAR(200) NOT NULL COMMENT '공지사항 제목',
+    content                 TEXT NOT NULL COMMENT '공지사항 본문',
+    pinned_yn               CHAR(1) NOT NULL DEFAULT 'N' COMMENT '상단 고정 여부 (Y: 고정, N: 일반)',
+    status                  VARCHAR(20) NOT NULL DEFAULT 'ACTIVE' COMMENT '공지사항 상태 (ACTIVE, HIDDEN, DELETED)',
+    created_no              BIGINT NULL COMMENT '생성자',
+    created_at              TIMESTAMP DEFAULT CURRENT_TIMESTAMP() NOT NULL COMMENT '생성일시',
+    modified_no             BIGINT NULL COMMENT '수정자',
+    modified_at             TIMESTAMP DEFAULT CURRENT_TIMESTAMP() NOT NULL ON UPDATE CURRENT_TIMESTAMP() COMMENT '수정일시',
+    FOREIGN KEY (shop_no) REFERENCES t_shop (no) ON DELETE CASCADE,
+    INDEX idx_shop_notice_list (shop_no, pinned_yn, created_at)
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT '매장 공지사항';

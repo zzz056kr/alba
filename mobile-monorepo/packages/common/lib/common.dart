@@ -6,6 +6,7 @@ export 'src/model/dto/email_dto.dart';
 export 'src/model/dto/shop_dto.dart';
 export 'src/model/dto/shop_member_admin_dto.dart';
 export 'src/model/dto/shop_member_dto.dart';
+export 'src/model/dto/shop_notice_dto.dart';
 export 'src/model/dto/token_dto.dart';
 export 'src/model/page_list_dto.dart';
 export 'src/model/response_model.dart';
