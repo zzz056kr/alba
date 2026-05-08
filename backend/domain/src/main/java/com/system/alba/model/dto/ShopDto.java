@@ -6,7 +6,6 @@ import com.system.alba.model.domain.Shop;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 import org.mapstruct.ReportingPolicy;
@@ -32,7 +31,9 @@ public class ShopDto {
     public static class Summary {
         private Long no;
         private String name;
-        private String address;
+        private String zipCode;
+        private String baseAddress;
+        private String detailAddress;
         private String inviteCode;
         private String qrCodeValue;
         private BigDecimal latitude;
@@ -65,14 +66,18 @@ public class ShopDto {
         @NotBlank
         private String name;
 
-        private String address;
+        @NotBlank
+        private String zipCode;
 
-        @NotNull
+        @NotBlank
+        private String baseAddress;
+
+        private String detailAddress;
+
         @DecimalMin(value = "-90.0")
         @DecimalMax(value = "90.0")
         private BigDecimal latitude;
 
-        @NotNull
         @DecimalMin(value = "-180.0")
         @DecimalMax(value = "180.0")
         private BigDecimal longitude;
@@ -87,7 +92,9 @@ public class ShopDto {
     @Setter
     public static class EditForm {
         private String name;
-        private String address;
+        private String zipCode;
+        private String baseAddress;
+        private String detailAddress;
 
         @DecimalMin(value = "-90.0")
         @DecimalMax(value = "90.0")

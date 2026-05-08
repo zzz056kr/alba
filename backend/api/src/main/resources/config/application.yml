@@ -31,7 +31,7 @@ spring:
     activate:
       on-profile: local
   datasource:
-    url: jdbc:mariadb://localhost:3306/test
+    url: jdbc:mariadb://localhost:3306/alba
     username: root
     password: root
     driver-class-name: org.mariadb.jdbc.Driver

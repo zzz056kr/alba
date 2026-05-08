@@ -25,7 +25,13 @@ public class Shop extends BaseEntity {
     private Long no;
 
     private String name;
-    private String address;
+
+    private String zipCode;
+
+    private String baseAddress;
+
+    private String detailAddress;
+
     private String inviteCode;
     private String qrCodeValue;
     private BigDecimal latitude;
