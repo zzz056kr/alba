@@ -20,11 +20,6 @@ import '../widget/social_marks.dart';
 class LoginView extends HookConsumerWidget {
   const LoginView({super.key});
 
-  static const _loginRoles = <({String label, String title})>[
-    (label: '사장', title: '사장님 로그인'),
-    (label: '직원', title: '직원 로그인'),
-  ];
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(loginControllerProvider);
@@ -32,10 +27,6 @@ class LoginView extends HookConsumerWidget {
     final idController = useTextEditingController();
     final passwordController = useTextEditingController();
     final shouldNavigateOnOAuth = useRef(false);
-    final tabController = useTabController(initialLength: _loginRoles.length);
-    useListenable(tabController);
-    final selectedRoleIndex = tabController.index;
-    final selectedRole = _loginRoles[selectedRoleIndex];
 
     useEffect(() {
       Future<void> restoreSavedId() async {
@@ -139,7 +130,7 @@ class LoginView extends HookConsumerWidget {
     }
 
     return AuthScaffold(
-      title: selectedRole.title,
+      title: '로그인',
       child: Form(
         key: formKey,
         autovalidateMode: state.showValidation
@@ -148,38 +139,16 @@ class LoginView extends HookConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFFF3F5F7),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: TabBar(
-                controller: tabController,
-                indicator: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                indicatorSize: TabBarIndicatorSize.tab,
-                dividerColor: Colors.transparent,
-                labelColor: const Color(0xFF111827),
-                unselectedLabelColor: const Color(0xFF6B7280),
-                overlayColor: WidgetStateProperty.all(Colors.transparent),
-                tabs: [
-                  for (final role in _loginRoles) Tab(text: role.label),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
             FormTextField(
               controller: idController,
-              labelText: '${selectedRole.label} 아이디',
+              labelText: '아이디',
               textInputAction: TextInputAction.next,
               validator: AccountSchema.loginId,
             ),
             const SizedBox(height: 12),
             FormPasswordField(
               controller: passwordController,
-              labelText: '${selectedRole.label} 비밀번호',
+              labelText: '비밀번호',
               textInputAction: TextInputAction.done,
               validator: AccountSchema.loginPassword,
               onFieldSubmitted: (_) => state.isLoggingIn ? null : login(),
@@ -218,7 +187,7 @@ class LoginView extends HookConsumerWidget {
             AppPrimaryButton(
               onPressed: state.isLoggingIn ? null : login,
               isLoading: state.isLoggingIn,
-              label: '${selectedRole.label} 로그인',
+              label: '로그인',
             ),
             const SizedBox(height: 22),
             const Row(
@@ -233,7 +202,7 @@ class LoginView extends HookConsumerWidget {
             ),
             const SizedBox(height: 22),
             SocialLoginButton(
-              label: 'Google로 ${selectedRole.label} 로그인',
+              label: 'Google로 로그인',
               backgroundColor: Colors.white,
               foregroundColor: const Color(0xFF202124),
               borderColor: const Color(0xFFDADCE0),
@@ -242,7 +211,7 @@ class LoginView extends HookConsumerWidget {
             ),
             const SizedBox(height: 12),
             SocialLoginButton(
-              label: '카카오로 ${selectedRole.label} 로그인',
+              label: '카카오로 로그인',
               backgroundColor: const Color(0xFFFEE500),
               foregroundColor: const Color(0xFF191600),
               icon: const KakaoMark(),
@@ -250,7 +219,7 @@ class LoginView extends HookConsumerWidget {
             ),
             const SizedBox(height: 12),
             SocialLoginButton(
-              label: '네이버로 ${selectedRole.label} 로그인',
+              label: '네이버로 로그인',
               backgroundColor: const Color(0xFF03C75A),
               foregroundColor: Colors.white,
               icon: const NaverMark(),

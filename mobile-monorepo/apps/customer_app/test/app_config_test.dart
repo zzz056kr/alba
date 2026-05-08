@@ -10,7 +10,7 @@ void main() {
 
   test('builds AppConfig and ApiRuntime from environment', () async {
     await dotenv.load(
-      fileName: 'assets/config/.env',
+      fileName: '.env',
       mergeWith: {
         'API_BASE_URL': 'http://localhost:8080',
         'DATA_SOURCE': 'mock',

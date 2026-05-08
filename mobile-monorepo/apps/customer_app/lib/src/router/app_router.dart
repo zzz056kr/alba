@@ -10,6 +10,8 @@ import '../page/forgot_password_page.dart';
 import '../page/login_page.dart';
 import '../page/mypage_page.dart';
 import '../page/register_page.dart';
+import '../page/shop_create_page.dart';
+import '../page/shop_join_page.dart';
 import '../provider/auth_session_controller.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -48,6 +50,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           return MyPagePage(userId: session?.userId ?? '');
         },
       ),
+      GoRoute(
+        path: ShopCreatePage.routePath,
+        builder: (context, state) => const ShopCreatePage(),
+      ),
+      GoRoute(
+        path: ShopJoinPage.routePath,
+        builder: (context, state) => const ShopJoinPage(),
+      ),
     ],
     redirect: (context, state) {
       final authSession = ref.read(authSessionControllerProvider);
@@ -64,7 +74,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           location == RegisterPage.routePath ||
           location == ForgotPasswordPage.routePath;
       final isProtectedRoute =
-          location == AppShellPage.routePath || location == MyPagePage.routePath;
+          location == AppShellPage.routePath ||
+          location == MyPagePage.routePath ||
+          location == ShopCreatePage.routePath ||
+          location == ShopJoinPage.routePath;
 
       if (!isLoggedIn && isProtectedRoute) {
         return LoginPage.routePath;
