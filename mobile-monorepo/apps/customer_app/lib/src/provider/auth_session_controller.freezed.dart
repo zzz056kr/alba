@@ -22,6 +22,8 @@ mixin _$AuthSession {
   String get refreshToken => throw _privateConstructorUsedError;
   int get refreshTokenExpiresIn => throw _privateConstructorUsedError;
   String get userId => throw _privateConstructorUsedError;
+  String get email => throw _privateConstructorUsedError;
+  List<String> get roles => throw _privateConstructorUsedError;
   DateTime get issuedAt => throw _privateConstructorUsedError;
 
   /// Create a copy of AuthSession
@@ -44,6 +46,8 @@ abstract class $AuthSessionCopyWith<$Res> {
     String refreshToken,
     int refreshTokenExpiresIn,
     String userId,
+    String email,
+    List<String> roles,
     DateTime issuedAt,
   });
 }
@@ -68,6 +72,8 @@ class _$AuthSessionCopyWithImpl<$Res, $Val extends AuthSession>
     Object? refreshToken = null,
     Object? refreshTokenExpiresIn = null,
     Object? userId = null,
+    Object? email = null,
+    Object? roles = null,
     Object? issuedAt = null,
   }) {
     return _then(
@@ -92,6 +98,14 @@ class _$AuthSessionCopyWithImpl<$Res, $Val extends AuthSession>
                 ? _value.userId
                 : userId // ignore: cast_nullable_to_non_nullable
                       as String,
+            email: null == email
+                ? _value.email
+                : email // ignore: cast_nullable_to_non_nullable
+                      as String,
+            roles: null == roles
+                ? _value.roles
+                : roles // ignore: cast_nullable_to_non_nullable
+                      as List<String>,
             issuedAt: null == issuedAt
                 ? _value.issuedAt
                 : issuedAt // ignore: cast_nullable_to_non_nullable
@@ -117,6 +131,8 @@ abstract class _$$AuthSessionImplCopyWith<$Res>
     String refreshToken,
     int refreshTokenExpiresIn,
     String userId,
+    String email,
+    List<String> roles,
     DateTime issuedAt,
   });
 }
@@ -140,6 +156,8 @@ class __$$AuthSessionImplCopyWithImpl<$Res>
     Object? refreshToken = null,
     Object? refreshTokenExpiresIn = null,
     Object? userId = null,
+    Object? email = null,
+    Object? roles = null,
     Object? issuedAt = null,
   }) {
     return _then(
@@ -164,6 +182,14 @@ class __$$AuthSessionImplCopyWithImpl<$Res>
             ? _value.userId
             : userId // ignore: cast_nullable_to_non_nullable
                   as String,
+        email: null == email
+            ? _value.email
+            : email // ignore: cast_nullable_to_non_nullable
+                  as String,
+        roles: null == roles
+            ? _value._roles
+            : roles // ignore: cast_nullable_to_non_nullable
+                  as List<String>,
         issuedAt: null == issuedAt
             ? _value.issuedAt
             : issuedAt // ignore: cast_nullable_to_non_nullable
@@ -182,8 +208,11 @@ class _$AuthSessionImpl extends _AuthSession {
     required this.refreshToken,
     required this.refreshTokenExpiresIn,
     required this.userId,
+    required this.email,
+    required final List<String> roles,
     required this.issuedAt,
-  }) : super._();
+  }) : _roles = roles,
+       super._();
 
   @override
   final String accessToken;
@@ -196,11 +225,21 @@ class _$AuthSessionImpl extends _AuthSession {
   @override
   final String userId;
   @override
+  final String email;
+  final List<String> _roles;
+  @override
+  List<String> get roles {
+    if (_roles is EqualUnmodifiableListView) return _roles;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_roles);
+  }
+
+  @override
   final DateTime issuedAt;
 
   @override
   String toString() {
-    return 'AuthSession(accessToken: $accessToken, accessTokenExpiresIn: $accessTokenExpiresIn, refreshToken: $refreshToken, refreshTokenExpiresIn: $refreshTokenExpiresIn, userId: $userId, issuedAt: $issuedAt)';
+    return 'AuthSession(accessToken: $accessToken, accessTokenExpiresIn: $accessTokenExpiresIn, refreshToken: $refreshToken, refreshTokenExpiresIn: $refreshTokenExpiresIn, userId: $userId, email: $email, roles: $roles, issuedAt: $issuedAt)';
   }
 
   @override
@@ -217,6 +256,8 @@ class _$AuthSessionImpl extends _AuthSession {
             (identical(other.refreshTokenExpiresIn, refreshTokenExpiresIn) ||
                 other.refreshTokenExpiresIn == refreshTokenExpiresIn) &&
             (identical(other.userId, userId) || other.userId == userId) &&
+            (identical(other.email, email) || other.email == email) &&
+            const DeepCollectionEquality().equals(other._roles, _roles) &&
             (identical(other.issuedAt, issuedAt) ||
                 other.issuedAt == issuedAt));
   }
@@ -229,6 +270,8 @@ class _$AuthSessionImpl extends _AuthSession {
     refreshToken,
     refreshTokenExpiresIn,
     userId,
+    email,
+    const DeepCollectionEquality().hash(_roles),
     issuedAt,
   );
 
@@ -248,6 +291,8 @@ abstract class _AuthSession extends AuthSession {
     required final String refreshToken,
     required final int refreshTokenExpiresIn,
     required final String userId,
+    required final String email,
+    required final List<String> roles,
     required final DateTime issuedAt,
   }) = _$AuthSessionImpl;
   const _AuthSession._() : super._();
@@ -262,6 +307,10 @@ abstract class _AuthSession extends AuthSession {
   int get refreshTokenExpiresIn;
   @override
   String get userId;
+  @override
+  String get email;
+  @override
+  List<String> get roles;
   @override
   DateTime get issuedAt;
 

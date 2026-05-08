@@ -1,15 +1,21 @@
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:go_router/go_router.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 
+import '../page/app_shell_page.dart';
+import '../provider/shop_create_controller.dart';
+import '../model/form/shop_create_form_value.dart';
 import 'address_search_view.dart';
 
-class ShopCreateView extends HookWidget {
+class ShopCreateView extends HookConsumerWidget {
   const ShopCreateView({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final state = ref.watch(shopCreateControllerProvider);
     final formKey = useMemoized(GlobalKey<FormState>.new);
     final nameController = useTextEditingController();
     final zipCodeController = useTextEditingController();
@@ -18,20 +24,46 @@ class ShopCreateView extends HookWidget {
     final extraAddress = useState('');
     final isAddressSearchOpen = useState(false);
 
-    void submit() {
-      final isValid = formKey.currentState?.validate() ?? false;
-      if (!isValid) {
+    ref.listen<ShopCreateState>(shopCreateControllerProvider, (previous, next) {
+      if (previous?.message?.text == next.message?.text ||
+          next.message == null) {
+        return;
+      }
+
+      if (next.isSuccess) {
+        context.go(AppShellPage.routePath);
         return;
       }
 
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(
-          const SnackBar(
-            content: Text('매장 등록 API 연결 전입니다. 화면 흐름만 먼저 구성했습니다.'),
+          SnackBar(
+            content: Text(next.message!.text),
             behavior: SnackBarBehavior.floating,
           ),
         );
+    });
+
+    Future<void> submit() async {
+      FocusScope.of(context).unfocus();
+
+      final isValid = formKey.currentState?.validate() ?? false;
+      if (!isValid) {
+        ref.read(shopCreateControllerProvider.notifier).showValidationError();
+        return;
+      }
+
+      await ref
+          .read(shopCreateControllerProvider.notifier)
+          .createShop(
+            ShopCreateFormValue(
+              name: nameController.text,
+              zipCode: zipCodeController.text,
+              baseAddress: address1Controller.text,
+              detailAddress: address2Controller.text,
+            ),
+          );
     }
 
     return Scaffold(
@@ -46,6 +78,9 @@ class ShopCreateView extends HookWidget {
                   child: AppSurfaceCard(
                     child: Form(
                       key: formKey,
+                      autovalidateMode: state.showValidation
+                          ? AutovalidateMode.always
+                          : AutovalidateMode.disabled,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
@@ -165,7 +200,8 @@ class ShopCreateView extends HookWidget {
                           ),
                           const SizedBox(height: 24),
                           AppPrimaryButton(
-                            onPressed: submit,
+                            onPressed: state.isSubmitting ? null : submit,
+                            isLoading: state.isSubmitting,
                             label: '매장 등록 시작',
                           ),
                         ],

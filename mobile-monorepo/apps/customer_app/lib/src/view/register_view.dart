@@ -27,6 +27,11 @@ class RegisterView extends HookConsumerWidget {
         return;
       }
 
+      if (next.isSuccess) {
+        context.go(LoginPage.routePath);
+        return;
+      }
+
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(
@@ -35,10 +40,6 @@ class RegisterView extends HookConsumerWidget {
             behavior: SnackBarBehavior.floating,
           ),
         );
-
-      if (next.isSuccess) {
-        context.go(LoginPage.routePath);
-      }
     });
 
     Future<void> register() async {

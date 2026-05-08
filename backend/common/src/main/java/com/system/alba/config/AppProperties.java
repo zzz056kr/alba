@@ -12,6 +12,7 @@ public class AppProperties {
     private final CacheProperties cache = new CacheProperties();
     private final AsyncProperties async = new AsyncProperties();
     private final SchedulerProperties scheduler = new SchedulerProperties();
+    private final GeocodingProperties geocoding = new GeocodingProperties();
 
     @Data
     public static class AuthProperties {
@@ -35,5 +36,16 @@ public class AppProperties {
     @Data
     public static class SchedulerProperties {
         private String tokenCleanupCron = "0 0 3 * * *";
+    }
+
+    @Data
+    public static class GeocodingProperties {
+        private final KakaoProperties kakao = new KakaoProperties();
+    }
+
+    @Data
+    public static class KakaoProperties {
+        private String restApiKey;
+        private String localApiUrl = "https://dapi.kakao.com/v2/local/search/address.json";
     }
 }

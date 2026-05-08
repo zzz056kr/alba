@@ -38,6 +38,8 @@ class OAuthCallbackResult with _$OAuthCallbackResult {
       refreshToken: refreshToken!,
       refreshTokenExpiresIn: refreshTokenExpiresIn!,
       userId: userId!,
+      email: '',
+      roles: const ['USER'],
     );
   }
 

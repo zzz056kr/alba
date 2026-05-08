@@ -40,6 +40,8 @@ class MockAuthApi implements AuthApi {
           refreshToken: 'mock-refresh-token',
           refreshTokenExpiresIn: 604800,
           userId: request.id,
+          email: '${request.id}@example.com',
+          roles: const ['USER'],
         ),
       ),
     );
@@ -60,6 +62,8 @@ class MockAuthApi implements AuthApi {
           refreshToken: 'mock-refreshed-refresh-token',
           refreshTokenExpiresIn: 604800,
           userId: 'mock-user',
+          email: 'mock-user@example.com',
+          roles: const ['USER'],
         ),
       ),
     );

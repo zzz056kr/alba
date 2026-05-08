@@ -8,9 +8,9 @@ POST {{baseUrl}}/account/join
 Content-Type: application/json
 
 {
-  "id": "new-user",
-  "name": "신규 사용자",
-  "password": "Password123!",
+  "id": "test",
+  "name": "test",
+  "password": "12345678",
   "email": "new-user@example.com"
 }
 

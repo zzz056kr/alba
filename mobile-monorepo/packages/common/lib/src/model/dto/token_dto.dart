@@ -10,6 +10,8 @@ class TokenResponse with _$TokenResponse {
     required String refreshToken,
     required int refreshTokenExpiresIn,
     required String userId,
+    required String email,
+    required List<String> roles,
   }) = _TokenResponse;
 
   factory TokenResponse.fromJson(Map<String, dynamic> json) {
@@ -26,6 +28,10 @@ class TokenResponse with _$TokenResponse {
       refreshToken: data['refreshToken'] as String? ?? '',
       refreshTokenExpiresIn: data['refreshTokenExpiresIn'] as int? ?? 0,
       userId: account['id'] as String? ?? '',
+      email: account['email'] as String? ?? '',
+      roles: (data['roles'] as List<dynamic>? ?? const <dynamic>[])
+          .whereType<String>()
+          .toList(),
     );
   }
 }

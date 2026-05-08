@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../page/app_shell_page.dart';
+import '../page/email_verification_page.dart';
 import '../page/forgot_password_page.dart';
 import '../page/login_page.dart';
 import '../page/mypage_page.dart';
@@ -35,6 +36,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const LoginPage(),
       ),
       GoRoute(
+        path: EmailVerificationPage.routePath,
+        builder: (context, state) => const EmailVerificationPage(),
+      ),
+      GoRoute(
         path: RegisterPage.routePath,
         builder: (context, state) => const RegisterPage(),
       ),
@@ -62,7 +67,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) {
       final authSession = ref.read(authSessionControllerProvider);
       final isLoading = authSession.isLoading;
-      final isLoggedIn = authSession.valueOrNull != null;
+      final session = authSession.valueOrNull;
+      final isLoggedIn = session != null;
+      final requiresEmailVerification =
+          session?.requiresEmailVerification ?? false;
+      final isVerifiedUser = session?.isVerifiedUser ?? false;
 
       if (isLoading) {
         return null;
@@ -73,17 +82,26 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           location == LoginPage.routePath ||
           location == RegisterPage.routePath ||
           location == ForgotPasswordPage.routePath;
+      final isVerificationRoute = location == EmailVerificationPage.routePath;
       final isProtectedRoute =
           location == AppShellPage.routePath ||
           location == MyPagePage.routePath ||
           location == ShopCreatePage.routePath ||
           location == ShopJoinPage.routePath;
 
-      if (!isLoggedIn && isProtectedRoute) {
+      if (!isLoggedIn && (isProtectedRoute || isVerificationRoute)) {
         return LoginPage.routePath;
       }
 
-      if (isLoggedIn && isAuthRoute) {
+      if (requiresEmailVerification &&
+          !isVerificationRoute &&
+          (isProtectedRoute || isAuthRoute)) {
+        return EmailVerificationPage.routePath;
+      }
+
+      if (isLoggedIn &&
+          isVerifiedUser &&
+          (isAuthRoute || isVerificationRoute)) {
         return AppShellPage.routePath;
       }
 
@@ -98,7 +116,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         switch (event) {
           case AuthEvent.redirectToLogin:
             ref.read(authSessionControllerProvider.notifier).logout();
-            router.go(LoginPage.routePath);
             break;
         }
       });

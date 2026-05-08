@@ -1,30 +1,53 @@
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:go_router/go_router.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-class ShopJoinView extends HookWidget {
+import '../page/app_shell_page.dart';
+import '../provider/shop_join_controller.dart';
+
+class ShopJoinView extends HookConsumerWidget {
   const ShopJoinView({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final state = ref.watch(shopJoinControllerProvider);
     final formKey = useMemoized(GlobalKey<FormState>.new);
     final inviteCodeController = useTextEditingController();
 
-    void submit() {
-      final isValid = formKey.currentState?.validate() ?? false;
-      if (!isValid) {
+    ref.listen<ShopJoinState>(shopJoinControllerProvider, (previous, next) {
+      if (previous?.message?.text == next.message?.text ||
+          next.message == null) {
+        return;
+      }
+
+      if (next.isSuccess) {
+        context.go(AppShellPage.routePath);
         return;
       }
 
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(
-          const SnackBar(
-            content: Text('매장 합류 API 연결 전입니다. 화면 흐름만 먼저 구성했습니다.'),
+          SnackBar(
+            content: Text(next.message!.text),
             behavior: SnackBarBehavior.floating,
           ),
         );
+    });
+
+    Future<void> submit() async {
+      final isValid = formKey.currentState?.validate() ?? false;
+      if (!isValid) {
+        ref.read(shopJoinControllerProvider.notifier).showValidationError();
+        return;
+      }
+
+      await ref
+          .read(shopJoinControllerProvider.notifier)
+          .joinShop(inviteCodeController.text);
     }
 
     return Scaffold(
@@ -37,6 +60,9 @@ class ShopJoinView extends HookWidget {
               child: AppSurfaceCard(
                 child: Form(
                   key: formKey,
+                  autovalidateMode: state.showValidation
+                      ? AutovalidateMode.always
+                      : AutovalidateMode.disabled,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -68,7 +94,7 @@ class ShopJoinView extends HookWidget {
                             const SizedBox(width: 14),
                             Expanded(
                               child: Text(
-                                '매장 코드를 입력하면 해당 매장 합류 요청으로 이어집니다. 승인 후 알바 화면을 사용할 수 있습니다.',
+                                '매장 코드를 입력하면 해당 매장에 합류 요청을 보냅니다. 승인 후 알바 화면을 사용할 수 있습니다.',
                                 style: theme.textTheme.bodyMedium?.copyWith(
                                   color: const Color(0xFF4E5B61),
                                   height: 1.45,
@@ -93,7 +119,8 @@ class ShopJoinView extends HookWidget {
                       ),
                       const SizedBox(height: 24),
                       AppPrimaryButton(
-                        onPressed: submit,
+                        onPressed: state.isSubmitting ? null : submit,
+                        isLoading: state.isSubmitting,
                         label: '매장 합류 요청',
                       ),
                     ],

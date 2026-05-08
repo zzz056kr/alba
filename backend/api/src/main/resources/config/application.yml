@@ -23,6 +23,10 @@ app:
     queue-capacity: 100
   scheduler:
     token-cleanup-cron: "0 0 3 * * *"
+  geocoding:
+    kakao:
+      rest-api-key: ${KAKAO_REST_API_KEY:18d59116fe02cf04e3c0c4dd408ba4be}
+      local-api-url: https://dapi.kakao.com/v2/local/search/address.json
 
 ---
 # Local profile (MariaDB)

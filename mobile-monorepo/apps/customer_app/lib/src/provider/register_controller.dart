@@ -61,7 +61,26 @@ class RegisterController extends AutoDisposeNotifier<RegisterState> {
         isSuccess: true,
       );
       return true;
-    } on DioException {
+    } on DioException catch (error) {
+      final data = error.response?.data;
+      String message = '회원가입 실패';
+
+      if (data is Map) {
+        final responseMessage = data['message'];
+        final errorMessage = data['error'];
+        if (responseMessage is String && responseMessage.isNotEmpty) {
+          message = responseMessage;
+        } else if (errorMessage is String && errorMessage.isNotEmpty) {
+          message = errorMessage;
+        }
+      } else if (error.message != null && error.message!.isNotEmpty) {
+        message = error.message!;
+      }
+
+      state = state.copyWith(
+        message: UiMessage(kind: UiMessageKind.error, text: message),
+        isSuccess: false,
+      );
       return false;
     } catch (error) {
       state = state.copyWith(

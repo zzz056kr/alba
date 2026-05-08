@@ -22,6 +22,8 @@ mixin _$TokenResponse {
   String get refreshToken => throw _privateConstructorUsedError;
   int get refreshTokenExpiresIn => throw _privateConstructorUsedError;
   String get userId => throw _privateConstructorUsedError;
+  String get email => throw _privateConstructorUsedError;
+  List<String> get roles => throw _privateConstructorUsedError;
 
   /// Create a copy of TokenResponse
   /// with the given fields replaced by the non-null parameter values.
@@ -43,6 +45,8 @@ abstract class $TokenResponseCopyWith<$Res> {
     String refreshToken,
     int refreshTokenExpiresIn,
     String userId,
+    String email,
+    List<String> roles,
   });
 }
 
@@ -66,6 +70,8 @@ class _$TokenResponseCopyWithImpl<$Res, $Val extends TokenResponse>
     Object? refreshToken = null,
     Object? refreshTokenExpiresIn = null,
     Object? userId = null,
+    Object? email = null,
+    Object? roles = null,
   }) {
     return _then(
       _value.copyWith(
@@ -89,6 +95,14 @@ class _$TokenResponseCopyWithImpl<$Res, $Val extends TokenResponse>
                 ? _value.userId
                 : userId // ignore: cast_nullable_to_non_nullable
                       as String,
+            email: null == email
+                ? _value.email
+                : email // ignore: cast_nullable_to_non_nullable
+                      as String,
+            roles: null == roles
+                ? _value.roles
+                : roles // ignore: cast_nullable_to_non_nullable
+                      as List<String>,
           )
           as $Val,
     );
@@ -110,6 +124,8 @@ abstract class _$$TokenResponseImplCopyWith<$Res>
     String refreshToken,
     int refreshTokenExpiresIn,
     String userId,
+    String email,
+    List<String> roles,
   });
 }
 
@@ -132,6 +148,8 @@ class __$$TokenResponseImplCopyWithImpl<$Res>
     Object? refreshToken = null,
     Object? refreshTokenExpiresIn = null,
     Object? userId = null,
+    Object? email = null,
+    Object? roles = null,
   }) {
     return _then(
       _$TokenResponseImpl(
@@ -155,6 +173,14 @@ class __$$TokenResponseImplCopyWithImpl<$Res>
             ? _value.userId
             : userId // ignore: cast_nullable_to_non_nullable
                   as String,
+        email: null == email
+            ? _value.email
+            : email // ignore: cast_nullable_to_non_nullable
+                  as String,
+        roles: null == roles
+            ? _value._roles
+            : roles // ignore: cast_nullable_to_non_nullable
+                  as List<String>,
       ),
     );
   }
@@ -169,7 +195,9 @@ class _$TokenResponseImpl implements _TokenResponse {
     required this.refreshToken,
     required this.refreshTokenExpiresIn,
     required this.userId,
-  });
+    required this.email,
+    required final List<String> roles,
+  }) : _roles = roles;
 
   @override
   final String accessToken;
@@ -181,10 +209,19 @@ class _$TokenResponseImpl implements _TokenResponse {
   final int refreshTokenExpiresIn;
   @override
   final String userId;
+  @override
+  final String email;
+  final List<String> _roles;
+  @override
+  List<String> get roles {
+    if (_roles is EqualUnmodifiableListView) return _roles;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_roles);
+  }
 
   @override
   String toString() {
-    return 'TokenResponse(accessToken: $accessToken, accessTokenExpiresIn: $accessTokenExpiresIn, refreshToken: $refreshToken, refreshTokenExpiresIn: $refreshTokenExpiresIn, userId: $userId)';
+    return 'TokenResponse(accessToken: $accessToken, accessTokenExpiresIn: $accessTokenExpiresIn, refreshToken: $refreshToken, refreshTokenExpiresIn: $refreshTokenExpiresIn, userId: $userId, email: $email, roles: $roles)';
   }
 
   @override
@@ -200,7 +237,9 @@ class _$TokenResponseImpl implements _TokenResponse {
                 other.refreshToken == refreshToken) &&
             (identical(other.refreshTokenExpiresIn, refreshTokenExpiresIn) ||
                 other.refreshTokenExpiresIn == refreshTokenExpiresIn) &&
-            (identical(other.userId, userId) || other.userId == userId));
+            (identical(other.userId, userId) || other.userId == userId) &&
+            (identical(other.email, email) || other.email == email) &&
+            const DeepCollectionEquality().equals(other._roles, _roles));
   }
 
   @override
@@ -211,6 +250,8 @@ class _$TokenResponseImpl implements _TokenResponse {
     refreshToken,
     refreshTokenExpiresIn,
     userId,
+    email,
+    const DeepCollectionEquality().hash(_roles),
   );
 
   /// Create a copy of TokenResponse
@@ -229,6 +270,8 @@ abstract class _TokenResponse implements TokenResponse {
     required final String refreshToken,
     required final int refreshTokenExpiresIn,
     required final String userId,
+    required final String email,
+    required final List<String> roles,
   }) = _$TokenResponseImpl;
 
   @override
@@ -241,6 +284,10 @@ abstract class _TokenResponse implements TokenResponse {
   int get refreshTokenExpiresIn;
   @override
   String get userId;
+  @override
+  String get email;
+  @override
+  List<String> get roles;
 
   /// Create a copy of TokenResponse
   /// with the given fields replaced by the non-null parameter values.

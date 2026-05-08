@@ -70,7 +70,7 @@ class AuthServerApi implements AuthApi {
     ApiRequestOptions? options,
   }) async {
     final response = await _dio.post<Map<String, dynamic>>(
-      '/auth/refresh',
+      '/app/auth/refresh',
       data: {'refreshToken': refreshToken},
       options: options?.toDioOptions(),
     );

@@ -11,6 +11,8 @@ class StoredAuthSession with _$StoredAuthSession {
     required String refreshToken,
     required int refreshTokenExpiresIn,
     required String userId,
+    required String email,
+    required List<String> roles,
     required DateTime issuedAt,
   }) = _StoredAuthSession;
 }
@@ -21,6 +23,8 @@ class AuthSessionStorageService {
   static const _refreshTokenKey = 'auth_refresh_token';
   static const _refreshTokenExpiresInKey = 'auth_refresh_token_expires_in';
   static const _userIdKey = 'auth_user_id';
+  static const _emailKey = 'auth_email';
+  static const _rolesKey = 'auth_roles';
   static const _issuedAtKey = 'auth_token_issued_at';
 
   Future<StoredAuthSession?> load() async {
@@ -28,6 +32,8 @@ class AuthSessionStorageService {
     final accessToken = prefs.getString(_accessTokenKey);
     final refreshToken = prefs.getString(_refreshTokenKey);
     final userId = prefs.getString(_userIdKey);
+    final email = prefs.getString(_emailKey) ?? '';
+    final roles = prefs.getStringList(_rolesKey) ?? const <String>['USER'];
     final accessExpiresIn = prefs.getInt(_accessTokenExpiresInKey);
     final refreshExpiresIn = prefs.getInt(_refreshTokenExpiresInKey);
     final issuedAtMillis = prefs.getInt(_issuedAtKey);
@@ -50,6 +56,8 @@ class AuthSessionStorageService {
       refreshToken: refreshToken,
       refreshTokenExpiresIn: refreshExpiresIn,
       userId: userId,
+      email: email,
+      roles: roles,
       issuedAt: DateTime.fromMillisecondsSinceEpoch(issuedAtMillis),
     );
   }
@@ -64,6 +72,8 @@ class AuthSessionStorageService {
       session.refreshTokenExpiresIn,
     );
     await prefs.setString(_userIdKey, session.userId);
+    await prefs.setString(_emailKey, session.email);
+    await prefs.setStringList(_rolesKey, session.roles);
     await prefs.setInt(_issuedAtKey, session.issuedAt.millisecondsSinceEpoch);
   }
 
@@ -74,6 +84,8 @@ class AuthSessionStorageService {
     await prefs.remove(_refreshTokenKey);
     await prefs.remove(_refreshTokenExpiresInKey);
     await prefs.remove(_userIdKey);
+    await prefs.remove(_emailKey);
+    await prefs.remove(_rolesKey);
     await prefs.remove(_issuedAtKey);
   }
 }

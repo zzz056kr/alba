@@ -110,6 +110,49 @@ final emailServiceProvider = Provider<EmailService>((ref) {
   );
 });
 
+final shopServiceProvider = Provider<ShopService>((ref) {
+  return ShopService(
+    runtime: ref.watch(apiRuntimeProvider),
+    httpClient: ref.watch(apiHttpClientProvider),
+  );
+});
+
+final myShopsProvider = FutureProvider<List<MyShopMembershipResponse>>((ref) {
+  final session = ref.watch(authSessionControllerProvider).valueOrNull;
+  if (session == null) {
+    return <MyShopMembershipResponse>[];
+  }
+
+  return ref.watch(shopServiceProvider).getMyShops();
+});
+
+final selectedShopIdProvider = StateProvider<int?>((ref) => null);
+
+final shopDetailProvider = FutureProvider.family<ShopResponse, int>((
+  ref,
+  shopId,
+) {
+  return ref.watch(shopServiceProvider).getShop(shopId);
+});
+
+final pendingShopMembersProvider =
+    FutureProvider.family<List<ShopMemberSummaryResponse>, int>((
+      ref,
+      shopId,
+    ) async {
+      final response = await ref
+          .watch(shopServiceProvider)
+          .getShopMembers(
+            shopId,
+            queryParameters: const {
+              'statuses': 'PENDING',
+              'page': 1,
+              'size': 50,
+            },
+          );
+      return response.list ?? const <ShopMemberSummaryResponse>[];
+    });
+
 final authFlowServiceProvider = Provider<AuthFlowService>((ref) {
   final appConfig = ref.watch(appConfigProvider);
   final authService = ref.watch(authServiceProvider);

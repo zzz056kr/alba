@@ -8,11 +8,9 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../model/form/login_form_value.dart';
-import '../page/app_shell_page.dart';
 import '../page/forgot_password_page.dart';
 import '../page/register_page.dart';
 import '../provider/app_providers.dart';
-import '../provider/auth_session_controller.dart';
 import '../provider/login_controller.dart';
 import '../widget/social_login_button.dart';
 import '../widget/social_marks.dart';
@@ -74,21 +72,6 @@ class LoginView extends HookConsumerWidget {
         );
     });
 
-    ref.listen<AsyncValue<AuthSession?>>(authSessionControllerProvider, (
-      previous,
-      next,
-    ) {
-      final wasLoggedIn = previous?.valueOrNull != null;
-      final isLoggedIn = next.valueOrNull != null;
-      if (shouldNavigateOnOAuth.value &&
-          !wasLoggedIn &&
-          isLoggedIn &&
-          context.mounted) {
-        shouldNavigateOnOAuth.value = false;
-        context.go(AppShellPage.routePath);
-      }
-    });
-
     Future<void> login() async {
       FocusScope.of(context).unfocus();
 
@@ -99,7 +82,7 @@ class LoginView extends HookConsumerWidget {
         return;
       }
 
-      final success = await ref
+      await ref
           .read(loginControllerProvider.notifier)
           .login(
             LoginFormValue(
@@ -107,25 +90,13 @@ class LoginView extends HookConsumerWidget {
               password: passwordController.text,
             ),
           );
-
-      if (!context.mounted || !success) {
-        return;
-      }
-
-      context.go(AppShellPage.routePath);
     }
 
     Future<void> startSocialLogin(OAuthProvider provider) async {
       shouldNavigateOnOAuth.value = true;
-      final success = await ref
+      await ref
           .read(loginControllerProvider.notifier)
           .startSocialLogin(provider);
-      if (success && context.mounted) {
-        shouldNavigateOnOAuth.value = false;
-        context.go(AppShellPage.routePath);
-        return;
-      }
-
       shouldNavigateOnOAuth.value = false;
     }
 

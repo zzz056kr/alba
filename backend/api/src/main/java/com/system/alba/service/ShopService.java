@@ -46,6 +46,7 @@ public class ShopService {
     private final ScheduleRepository scheduleRepository;
     private final ShopRepository shopRepository;
     private final ShopMemberRepository shopMemberRepository;
+    private final ShopGeocodingService shopGeocodingService;
     private final ThrowService throwService;
 
     @Transactional(readOnly = true)
@@ -89,6 +90,9 @@ public class ShopService {
 
         Shop shop = new Shop();
         ShopDto.CreateForm.Mapper.INSTANCE.updateSourceToDestination(form, shop);
+        ShopGeocodingService.Coordinates coordinates = shopGeocodingService.resolveCoordinates(shop.getBaseAddress());
+        shop.setLatitude(coordinates.getLatitude());
+        shop.setLongitude(coordinates.getLongitude());
         shop.setStatus(AppType.ShopStatus.ACTIVE);
         shop.setInviteCode(generateInviteCode());
         shop.setQrCodeValue(UUID.randomUUID().toString());
@@ -140,6 +144,9 @@ public class ShopService {
         }
 
         ShopDto.EditForm.Mapper.INSTANCE.updateSourceToDestination(form, shop);
+        ShopGeocodingService.Coordinates coordinates = shopGeocodingService.resolveCoordinates(shop.getBaseAddress());
+        shop.setLatitude(coordinates.getLatitude());
+        shop.setLongitude(coordinates.getLongitude());
         shop.setModifiedNo(account.getNo());
         shop = shopRepository.save(shop);
 
