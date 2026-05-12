@@ -116,6 +116,7 @@ CREATE TABLE alba.t_schedule (
     work_date               DATE NOT NULL COMMENT '근무 예정일자',
     start_time              TIME NOT NULL COMMENT '근무 시작 예정시간',
     end_time                TIME NOT NULL COMMENT '근무 종료 예정시간',
+    repeat_group_key        VARCHAR(64) NULL COMMENT '반복 일정 묶음 키',
     status                  VARCHAR(20) NOT NULL DEFAULT 'SCHEDULED' COMMENT '스케줄 상태 (SCHEDULED, CANCELED)',
     created_no              BIGINT NULL COMMENT '생성자',
     created_at              TIMESTAMP DEFAULT CURRENT_TIMESTAMP() NOT NULL COMMENT '생성일시',

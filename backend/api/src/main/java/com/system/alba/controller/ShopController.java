@@ -133,6 +133,17 @@ public class ShopController {
         return ResponseModel.ok(null);
     }
 
+    @PutMapping("/{shopId}/schedules/{scheduleId}")
+    @PreAuthorize("@shopAuth.isOwner(#shopId)")
+    public ResponseEntity<ResponseModel<ScheduleDto.Detail>> editSchedule(
+            @PathVariable Long shopId,
+            @PathVariable Long scheduleId,
+            @Valid @RequestBody ScheduleDto.EditForm form,
+            Authentication authentication
+    ) throws ServerException {
+        return ResponseModel.ok(shopService.editSchedule(shopId, scheduleId, form, authentication));
+    }
+
     @GetMapping("/{shopId}")
     @PreAuthorize("@shopAuth.isMember(#shopId)")
     public ResponseEntity<ResponseModel<ShopDto.Detail>> getShop(@PathVariable Long shopId) throws ServerException {

@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:api_client/api_client.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -13,6 +13,7 @@ import '../page/mypage_page.dart';
 import '../page/register_page.dart';
 import '../page/shop_create_page.dart';
 import '../page/shop_join_page.dart';
+import '../page/shop_schedule_create_page.dart';
 import '../provider/auth_session_controller.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -63,6 +64,32 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: ShopJoinPage.routePath,
         builder: (context, state) => const ShopJoinPage(),
       ),
+      GoRoute(
+        path: ShopScheduleCreatePage.routePath,
+        builder: (context, state) {
+          final shopId = int.tryParse(
+            state.uri.queryParameters['shopId'] ?? '',
+          );
+          if (shopId == null) {
+            return const Scaffold(body: Center(child: Text('잘못된 매장 정보입니다.')));
+          }
+          return ShopScheduleCreatePage(
+            shopId: shopId,
+            initialScheduleId: int.tryParse(
+              state.uri.queryParameters['scheduleId'] ?? '',
+            ),
+            initialShopMemberId: int.tryParse(
+              state.uri.queryParameters['shopMemberId'] ?? '',
+            ),
+            initialWorkDate: DateTime.tryParse(
+              state.uri.queryParameters['workDate'] ?? '',
+            ),
+            initialStartTime: state.uri.queryParameters['startTime'],
+            initialEndTime: state.uri.queryParameters['endTime'],
+            initialRepeatGroupKey: state.uri.queryParameters['repeatGroupKey'],
+          );
+        },
+      ),
     ],
     redirect: (context, state) {
       final authSession = ref.read(authSessionControllerProvider);
@@ -87,7 +114,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           location == AppShellPage.routePath ||
           location == MyPagePage.routePath ||
           location == ShopCreatePage.routePath ||
-          location == ShopJoinPage.routePath;
+          location == ShopJoinPage.routePath ||
+          location == ShopScheduleCreatePage.routePath;
 
       if (!isLoggedIn && (isProtectedRoute || isVerificationRoute)) {
         return LoginPage.routePath;

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:api_client/api_client.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -9,6 +11,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import '../page/mypage_page.dart';
 import '../page/shop_create_page.dart';
 import '../page/shop_join_page.dart';
+import '../page/shop_schedule_create_page.dart';
 import '../provider/app_providers.dart';
 import '../provider/auth_session_controller.dart';
 
@@ -48,9 +51,9 @@ class AppShellView extends ConsumerWidget {
             ),
             Text(
               '안녕하세요, ${session.userId}',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
             ),
           ],
         ),
@@ -89,7 +92,8 @@ class AppShellView extends ConsumerWidget {
 
           final selectedShopId = ref.watch(selectedShopIdProvider);
           final effectiveShopId =
-              selectedShopId ?? (items.length == 1 ? items.first.shop.no : null);
+              selectedShopId ??
+              (items.length == 1 ? items.first.shop.no : null);
 
           if (effectiveShopId == null) {
             return _ShopSelectionView(
@@ -102,11 +106,24 @@ class AppShellView extends ConsumerWidget {
             );
           }
 
-          final detail = ref.watch(shopDetailProvider(effectiveShopId));
           final membership = items.firstWhere(
             (item) => item.shop.no == effectiveShopId,
             orElse: () => items.first,
           );
+
+          if (membership.status != 'ACTIVE') {
+            return _PendingMembershipView(
+              membership: membership,
+              showBackToList: items.length > 1,
+              onBackToList: () {
+                ref.read(selectedShopIdProvider.notifier).state = null;
+              },
+              onMyPage: () => context.push(MyPagePage.routePath),
+              onLogout: logout,
+            );
+          }
+
+          final detail = ref.watch(shopDetailProvider(effectiveShopId));
 
           return _ShopDetailView(
             membership: membership,
@@ -167,6 +184,68 @@ class _Panel extends StatelessWidget {
       child: Padding(padding: padding, child: child),
     );
   }
+}
+
+DateTime _dateOnly(DateTime value) {
+  return DateTime(value.year, value.month, value.day);
+}
+
+bool _isSameDate(DateTime left, DateTime right) {
+  return left.year == right.year &&
+      left.month == right.month &&
+      left.day == right.day;
+}
+
+AttendanceSummaryResponse? _findActiveAttendance(
+  List<AttendanceSummaryResponse> attendances,
+) {
+  final today = _dateOnly(DateTime.now());
+  for (final attendance in attendances) {
+    final workDate = attendance.workDate;
+    if (attendance.isWorking &&
+        workDate != null &&
+        _isSameDate(_dateOnly(workDate), today)) {
+      return attendance;
+    }
+  }
+  return null;
+}
+
+String _formatDuration(Duration duration) {
+  final hours = duration.inHours.toString().padLeft(2, '0');
+  final minutes = (duration.inMinutes % 60).toString().padLeft(2, '0');
+  final seconds = (duration.inSeconds % 60).toString().padLeft(2, '0');
+  return '$hours:$minutes:$seconds';
+}
+
+String _formatTimeRange(String startTime, String endTime) {
+  String short(String value) {
+    final parts = value.split(':');
+    if (parts.length < 2) {
+      return value;
+    }
+    return '${parts[0].padLeft(2, '0')}:${parts[1].padLeft(2, '0')}';
+  }
+
+  return '${short(startTime)} ~ ${short(endTime)}';
+}
+
+String _weekdayLabel(DateTime date) {
+  const labels = ['월', '화', '수', '목', '금', '토', '일'];
+  return labels[date.weekday - 1];
+}
+
+String _formatScheduleHeadline(DateTime date) {
+  final now = DateTime.now();
+  final today = _dateOnly(now);
+  final target = _dateOnly(date);
+  if (_isSameDate(today, target)) {
+    return '오늘';
+  }
+  if (_isSameDate(today.add(const Duration(days: 1)), target)) {
+    return '내일(${_weekdayLabel(date)})';
+  }
+  return '${date.month}/${date.day}(${_weekdayLabel(date)})';
 }
 
 class _HeroBanner extends StatelessWidget {
@@ -441,6 +520,69 @@ class _ShopSelectionView extends StatelessWidget {
   }
 }
 
+class _PendingMembershipView extends StatelessWidget {
+  const _PendingMembershipView({
+    required this.membership,
+    required this.showBackToList,
+    required this.onBackToList,
+    required this.onMyPage,
+    required this.onLogout,
+  });
+
+  final MyShopMembershipResponse membership;
+  final bool showBackToList;
+  final VoidCallback onBackToList;
+  final VoidCallback onMyPage;
+  final VoidCallback onLogout;
+
+  @override
+  Widget build(BuildContext context) {
+    return _ShellList(
+      children: [
+        if (showBackToList)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: onBackToList,
+              icon: const Icon(Icons.arrow_back_rounded),
+              label: const Text('매장 목록으로'),
+            ),
+          ),
+        _Panel(
+          backgroundColor: const Color(0xFFFFFBF2),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                membership.shop.name,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 12),
+              const _RoleBadge(
+                label: '승인 대기',
+                backgroundColor: Color(0xFFF8F1DA),
+                foregroundColor: Color(0xFF7B5D16),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                '사장님의 승인 후 출퇴근과 일정 화면을 사용할 수 있습니다.',
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  height: 1.5,
+                  color: const Color(0xFF5D676B),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 18),
+        _BottomActions(onMyPage: onMyPage, onLogout: onLogout),
+      ],
+    );
+  }
+}
+
 class _ShopDetailView extends ConsumerWidget {
   const _ShopDetailView({
     required this.membership,
@@ -464,6 +606,46 @@ class _ShopDetailView extends ConsumerWidget {
         ? ref.watch(pendingShopMembersProvider(membership.shop.no))
         : null;
     final notices = ref.watch(shopNoticesProvider(membership.shop.no));
+    final ownerScheduleParams = (
+      shopId: membership.shop.no,
+      shopMemberId: null,
+      baseDate: _dateOnly(DateTime.now()),
+      viewType: 'MONTH',
+    );
+    final ownerSchedules = membership.shopRole == 'OWNER'
+        ? ref.watch(shopSchedulesProvider(ownerScheduleParams))
+        : null;
+
+    if (membership.shopRole != 'OWNER') {
+      return detail.when(
+        loading: () => const _ShellList(
+          children: [
+            _Panel(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 20),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+            ),
+          ],
+        ),
+        error: (error, _) => _ShellList(
+          children: [
+            _ErrorCard(message: '$error'),
+            const SizedBox(height: 18),
+            _BottomActions(onMyPage: onMyPage, onLogout: onLogout),
+          ],
+        ),
+        data: (shop) => _StaffHomeView(
+          membership: membership,
+          shop: shop,
+          notices: notices,
+          showBackToList: showBackToList,
+          onBackToList: onBackToList,
+          onMyPage: onMyPage,
+          onLogout: onLogout,
+        ),
+      );
+    }
 
     return _ShellList(
       children: [
@@ -527,11 +709,8 @@ class _ShopDetailView extends ConsumerWidget {
                     children: [
                       Text(
                         '매장 정보',
-                        style: Theme.of(
-                          context,
-                        ).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w800),
                       ),
                       const SizedBox(height: 14),
                       _InfoRow(label: '매장명', value: shop.name),
@@ -549,6 +728,49 @@ class _ShopDetailView extends ConsumerWidget {
                   inviteCode: shop.inviteCode,
                   qrCodeValue: shop.qrCodeValue,
                 ),
+                const SizedBox(height: 12),
+                _OwnerActionCard(shopId: membership.shop.no),
+                const SizedBox(height: 12),
+                if (ownerSchedules != null)
+                  ownerSchedules.when(
+                    loading: () => const _Panel(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(vertical: 16),
+                        child: Center(child: CircularProgressIndicator()),
+                      ),
+                    ),
+                    error: (error, _) => _ErrorCard(message: '$error'),
+                    data: (items) => _UpcomingScheduleCard(
+                      schedules: items,
+                      title: '전체 직원 일정 캘린더',
+                      emptyHeadline: '이번 달 등록된 전체 직원 일정을 캘린더로 확인하세요.',
+                      emptyDescription:
+                          '직원 일정이 등록되면 날짜를 눌러 근무 시간과 담당 직원을 바로 확인할 수 있습니다.',
+                      nextScheduleDescription: '가장 가까운 일정과 담당 직원을 먼저 보여줍니다.',
+                      scheduleDotLabel: '● 일정 있음',
+                      showMemberNames: true,
+                      onEditSchedule: (schedule) {
+                        final workDate = schedule.workDate;
+                        if (workDate == null || schedule.shopMember == null) {
+                          return;
+                        }
+                        final uri = Uri(
+                          path: ShopScheduleCreatePage.routePath,
+                          queryParameters: {
+                            'shopId': membership.shop.no.toString(),
+                            'scheduleId': schedule.no.toString(),
+                            'shopMemberId': schedule.shopMember!.no.toString(),
+                            'workDate': _dateOnly(workDate).toIso8601String(),
+                            'startTime': schedule.startTime,
+                            'endTime': schedule.endTime,
+                            if ((schedule.repeatGroupKey ?? '').isNotEmpty)
+                              'repeatGroupKey': schedule.repeatGroupKey!,
+                          },
+                        );
+                        context.push(uri.toString());
+                      },
+                    ),
+                  ),
                 const SizedBox(height: 12),
                 _NoticesCard(
                   shopId: membership.shop.no,
@@ -569,6 +791,722 @@ class _ShopDetailView extends ConsumerWidget {
         const SizedBox(height: 18),
         _BottomActions(onMyPage: onMyPage, onLogout: onLogout),
       ],
+    );
+  }
+}
+
+class _StaffHomeView extends ConsumerWidget {
+  const _StaffHomeView({
+    required this.membership,
+    required this.shop,
+    required this.notices,
+    required this.showBackToList,
+    required this.onBackToList,
+    required this.onMyPage,
+    required this.onLogout,
+  });
+
+  final MyShopMembershipResponse membership;
+  final ShopResponse shop;
+  final AsyncValue<List<ShopNoticeResponse>> notices;
+  final bool showBackToList;
+  final VoidCallback onBackToList;
+  final VoidCallback onMyPage;
+  final VoidCallback onLogout;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final now = DateTime.now();
+    final today = _dateOnly(now);
+    final monthStart = DateTime(now.year, now.month, 1);
+    final monthEnd = DateTime(now.year, now.month + 1, 0);
+    final attendanceParams = (
+      shopId: membership.shop.no,
+      shopMemberId: membership.no,
+      startDate: monthStart,
+      endDate: monthEnd,
+    );
+    final scheduleParams = (
+      shopId: membership.shop.no,
+      shopMemberId: membership.no,
+      baseDate: today,
+      viewType: 'MONTH',
+    );
+    final attendances = ref.watch(shopAttendancesProvider(attendanceParams));
+    final schedules = ref.watch(shopSchedulesProvider(scheduleParams));
+
+    return _ShellList(
+      children: [
+        if (showBackToList)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: onBackToList,
+              icon: const Icon(Icons.arrow_back_rounded),
+              label: const Text('매장 목록으로'),
+            ),
+          ),
+        attendances.when(
+          loading: () => const _Panel(
+            backgroundColor: Color(0xFF12343B),
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 60),
+              child: Center(
+                child: CircularProgressIndicator(color: Colors.white),
+              ),
+            ),
+          ),
+          error: (error, _) => _ErrorCard(message: '$error'),
+          data: (items) => _AttendanceHeroCard(
+            membership: membership,
+            shop: shop,
+            attendances: items,
+            attendanceParams: attendanceParams,
+            scheduleParams: scheduleParams,
+          ),
+        ),
+        const SizedBox(height: 12),
+        schedules.when(
+          loading: () => const _Panel(
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+          ),
+          error: (error, _) => _ErrorCard(message: '$error'),
+          data: (items) => _UpcomingScheduleCard(schedules: items),
+        ),
+        const SizedBox(height: 12),
+        _Panel(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                shop.name,
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '${shop.baseAddress} ${shop.detailAddress ?? ''}'.trim(),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: const Color(0xFF5D676B),
+                  height: 1.5,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        _NoticesCard(
+          shopId: membership.shop.no,
+          isOwner: false,
+          notices: notices,
+        ),
+        const SizedBox(height: 18),
+        _BottomActions(onMyPage: onMyPage, onLogout: onLogout),
+      ],
+    );
+  }
+}
+
+class _AttendanceHeroCard extends ConsumerStatefulWidget {
+  const _AttendanceHeroCard({
+    required this.membership,
+    required this.shop,
+    required this.attendances,
+    required this.attendanceParams,
+    required this.scheduleParams,
+  });
+
+  final MyShopMembershipResponse membership;
+  final ShopResponse shop;
+  final List<AttendanceSummaryResponse> attendances;
+  final ({int shopId, int? shopMemberId, DateTime startDate, DateTime endDate})
+  attendanceParams;
+  final ({int shopId, int? shopMemberId, DateTime baseDate, String viewType})
+  scheduleParams;
+
+  @override
+  ConsumerState<_AttendanceHeroCard> createState() =>
+      _AttendanceHeroCardState();
+}
+
+class _AttendanceHeroCardState extends ConsumerState<_AttendanceHeroCard> {
+  bool _isSubmitting = false;
+
+  Future<bool> _confirmAttendanceAction({required bool isWorking}) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text(isWorking ? '퇴근 처리할까요?' : '출근 처리할까요?'),
+          content: Text(
+            isWorking
+                ? '퇴근 처리 후에는 오늘 근무 시간이 기록됩니다. 실수라면 취소하고 다시 확인하세요.'
+                : '출근 처리하면 오늘 근무가 시작됩니다. 매장과 시간을 다시 확인하세요.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('취소'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: Text(isWorking ? '퇴근하기' : '출근하기'),
+            ),
+          ],
+        );
+      },
+    );
+
+    return result ?? false;
+  }
+
+  Future<void> _submitAttendance() async {
+    final shop = widget.shop;
+    if (shop.qrCodeValue.isEmpty ||
+        shop.latitude == null ||
+        shop.longitude == null) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text('매장 QR 또는 위치 정보가 없어 출퇴근 처리할 수 없습니다.'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      return;
+    }
+
+    final activeAttendance = _findActiveAttendance(widget.attendances);
+    final confirmed = await _confirmAttendanceAction(
+      isWorking: activeAttendance != null,
+    );
+    if (!confirmed || !mounted) {
+      return;
+    }
+
+    setState(() {
+      _isSubmitting = true;
+    });
+
+    final request = AttendanceQrRequest(
+      qrCodeValue: shop.qrCodeValue,
+      latitude: shop.latitude!,
+      longitude: shop.longitude!,
+    );
+
+    try {
+      if (activeAttendance == null) {
+        await ref
+            .read(shopServiceProvider)
+            .clockInByQr(widget.shop.no, request);
+      } else {
+        await ref
+            .read(shopServiceProvider)
+            .clockOutByQr(widget.shop.no, request);
+      }
+      ref.invalidate(shopAttendancesProvider(widget.attendanceParams));
+      ref.invalidate(shopSchedulesProvider(widget.scheduleParams));
+    } on DioException catch (error) {
+      var message = '출퇴근 처리에 실패했습니다.';
+      final data = error.response?.data;
+      if (data is Map) {
+        final responseMessage = data['message'];
+        final errorMessage = data['error'];
+        if (responseMessage is String && responseMessage.isNotEmpty) {
+          message = responseMessage;
+        } else if (errorMessage is String && errorMessage.isNotEmpty) {
+          message = errorMessage;
+        }
+      }
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
+        );
+      ref.invalidate(shopAttendancesProvider(widget.attendanceParams));
+      ref.invalidate(shopSchedulesProvider(widget.scheduleParams));
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final activeAttendance = _findActiveAttendance(widget.attendances);
+    final isWorking = activeAttendance != null;
+
+    return _Panel(
+      padding: EdgeInsets.zero,
+      backgroundColor: const Color(0xFF12343B),
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 320),
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF12343B), Color(0xFF1F6F78)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(28),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    widget.shop.name,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                _RoleBadge(
+                  label: isWorking ? '근무 중' : '출근 전',
+                  backgroundColor: Colors.white.withValues(alpha: .16),
+                  foregroundColor: Colors.white,
+                ),
+              ],
+            ),
+            const SizedBox(height: 18),
+            Text(
+              isWorking ? '지금은 근무 시간이 쌓이는 중입니다.' : '출근 버튼이 메인 화면의 최우선 액션입니다.',
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: Colors.white.withValues(alpha: .92),
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 40),
+            if (isWorking && activeAttendance.clockInAt != null) ...[
+              _LiveWorkDuration(clockInAt: activeAttendance.clockInAt!),
+              const SizedBox(height: 18),
+            ],
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: const Color(0xFF12343B),
+                  minimumSize: const Size.fromHeight(92),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                ),
+                onPressed: _isSubmitting ? null : _submitAttendance,
+                child: Text(
+                  _isSubmitting
+                      ? '처리 중...'
+                      : isWorking
+                      ? '퇴근하기'
+                      : '📷 출근하기 (QR 스캔)',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LiveWorkDuration extends StatelessWidget {
+  const _LiveWorkDuration({required this.clockInAt});
+
+  final DateTime clockInAt;
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<int>(
+      stream: Stream<int>.periodic(
+        const Duration(seconds: 1),
+        (count) => count,
+      ),
+      builder: (context, snapshot) {
+        final elapsed = DateTime.now().difference(clockInAt);
+        return Text(
+          '${_formatDuration(elapsed)} 근무 중',
+          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+            color: Colors.white,
+            fontWeight: FontWeight.w900,
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _UpcomingScheduleCard extends StatefulWidget {
+  const _UpcomingScheduleCard({
+    required this.schedules,
+    this.title = '내 일정 캘린더',
+    this.emptyHeadline = '이번 달 등록된 근무일을 캘린더로 확인하세요.',
+    this.emptyDescription = '다음 근무가 아직 없으면 새 일정이 등록될 때 여기에서 바로 보여줍니다.',
+    this.nextScheduleDescription = '다음 근무 일정이 다가오고 있습니다.',
+    this.scheduleDotLabel = '● 근무일',
+    this.showMemberNames = false,
+    this.onEditSchedule,
+  });
+
+  final List<ScheduleSummaryResponse> schedules;
+  final String title;
+  final String emptyHeadline;
+  final String emptyDescription;
+  final String nextScheduleDescription;
+  final String scheduleDotLabel;
+  final bool showMemberNames;
+  final ValueChanged<ScheduleSummaryResponse>? onEditSchedule;
+
+  @override
+  State<_UpcomingScheduleCard> createState() => _UpcomingScheduleCardState();
+}
+
+class _UpcomingScheduleCardState extends State<_UpcomingScheduleCard> {
+  DateTime? _selectedDate;
+
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final today = _dateOnly(now);
+    final schedules = widget.schedules;
+    final monthBase =
+        schedules
+            .map((item) => item.workDate)
+            .whereType<DateTime>()
+            .cast<DateTime?>()
+            .firstWhere(
+              (item) =>
+                  item != null &&
+                  item.year == today.year &&
+                  item.month == today.month,
+              orElse: () => today,
+            ) ??
+        today;
+    final firstDayOfMonth = DateTime(monthBase.year, monthBase.month, 1);
+    final lastDayOfMonth = DateTime(monthBase.year, monthBase.month + 1, 0);
+    final leadingEmptyDays = firstDayOfMonth.weekday % 7;
+    final totalCells = leadingEmptyDays + lastDayOfMonth.day;
+    final visibleSchedules =
+        schedules.where((item) {
+          final workDate = item.workDate;
+          return workDate != null &&
+              (item.status == 'SCHEDULED' || item.status == 'ACTIVE') &&
+              !_dateOnly(workDate).isBefore(today);
+        }).toList()..sort((left, right) {
+          final leftDate = left.workDate ?? today;
+          final rightDate = right.workDate ?? today;
+          return leftDate.compareTo(rightDate);
+        });
+    final scheduledDays = schedules
+        .map((item) => item.workDate)
+        .whereType<DateTime>()
+        .map(_dateOnly)
+        .toSet();
+    final defaultSelectedDate =
+        _selectedDate ??
+        (visibleSchedules.isNotEmpty
+            ? visibleSchedules.first.workDate
+            : null) ??
+        (schedules.isNotEmpty ? schedules.first.workDate : null);
+    final selectedDate = defaultSelectedDate == null
+        ? null
+        : _dateOnly(defaultSelectedDate);
+    final selectedSchedules =
+        selectedDate == null
+              ? const <ScheduleSummaryResponse>[]
+              : schedules.where((item) {
+                  final workDate = item.workDate;
+                  return workDate != null &&
+                      (item.status == 'SCHEDULED' || item.status == 'ACTIVE') &&
+                      _isSameDate(_dateOnly(workDate), selectedDate);
+                }).toList()
+          ..sort((left, right) => left.startTime.compareTo(right.startTime));
+
+    String headline;
+    String description;
+    if (visibleSchedules.isEmpty) {
+      headline = widget.emptyHeadline;
+      description = widget.emptyDescription;
+    } else {
+      final nextSchedule = visibleSchedules.first;
+      final workDate = nextSchedule.workDate!;
+      final memberName = nextSchedule.shopMember?.name.trim() ?? '';
+      final ownerPrefix = widget.showMemberNames && memberName.isNotEmpty
+          ? '$memberName · '
+          : '';
+      headline =
+          '💡 $ownerPrefix${_formatScheduleHeadline(workDate)} ${_formatTimeRange(nextSchedule.startTime, nextSchedule.endTime)}';
+      description = _isSameDate(workDate, today)
+          ? '오늘 근무가 잡혀 있습니다. 출근 전에 한 번 더 확인하세요.'
+          : widget.nextScheduleDescription;
+    }
+
+    return _Panel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            widget.title,
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '${monthBase.year}년 ${monthBase.month}월',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  widget.scheduleDotLabel,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF364FC7),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: 7 + totalCells,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 7,
+              mainAxisSpacing: 8,
+              crossAxisSpacing: 8,
+              childAspectRatio: 0.88,
+            ),
+            itemBuilder: (context, index) {
+              const weekdayLabels = ['일', '월', '화', '수', '목', '금', '토'];
+              if (index < 7) {
+                return Center(
+                  child: Text(
+                    weekdayLabels[index],
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: const Color(0xFF7A878C),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                );
+              }
+
+              final dayIndex = index - 7;
+              if (dayIndex < leadingEmptyDays ||
+                  dayIndex >= leadingEmptyDays + lastDayOfMonth.day) {
+                return const SizedBox.shrink();
+              }
+
+              final dayNumber = dayIndex - leadingEmptyDays + 1;
+              final cellDate = DateTime(
+                monthBase.year,
+                monthBase.month,
+                dayNumber,
+              );
+              final isToday = _isSameDate(cellDate, today);
+              final isSelected =
+                  selectedDate != null && _isSameDate(cellDate, selectedDate);
+              final hasSchedule = scheduledDays.contains(_dateOnly(cellDate));
+
+              return InkWell(
+                borderRadius: BorderRadius.circular(16),
+                onTap: () {
+                  setState(() {
+                    _selectedDate = cellDate;
+                  });
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? const Color(0xFF364FC7)
+                        : isToday
+                        ? const Color(0xFF1F6F78)
+                        : hasSchedule
+                        ? const Color(0xFFF5F3FF)
+                        : const Color(0xFFF8F7F3),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isSelected
+                          ? const Color(0xFF364FC7)
+                          : isToday
+                          ? const Color(0xFF1F6F78)
+                          : hasSchedule
+                          ? const Color(0xFFD7CCFF)
+                          : const Color(0xFFE6E1D7),
+                    ),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        '$dayNumber',
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w900,
+                          color: isSelected || isToday
+                              ? Colors.white
+                              : const Color(0xFF20272C),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: hasSchedule
+                              ? ((isSelected || isToday)
+                                    ? Colors.white
+                                    : const Color(0xFF364FC7))
+                              : Colors.transparent,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 18),
+          Text(
+            headline,
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            description,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: const Color(0xFF5D676B),
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF7F6F1),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: selectedDate == null
+                ? Text(
+                    '날짜를 선택하면 해당 날짜의 근무 시간이 보입니다.',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: const Color(0xFF5D676B),
+                    ),
+                  )
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${selectedDate.month}/${selectedDate.day}(${_weekdayLabel(selectedDate)}) 일정',
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      if (selectedSchedules.isEmpty)
+                        Text(
+                          '선택한 날짜에는 등록된 근무가 없습니다.',
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(color: const Color(0xFF5D676B)),
+                        ),
+                      if (selectedSchedules.isNotEmpty)
+                        for (final item in selectedSchedules) ...[
+                          Row(
+                            children: [
+                              Container(
+                                width: 8,
+                                height: 8,
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFF364FC7),
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      _formatTimeRange(
+                                        item.startTime,
+                                        item.endTime,
+                                      ),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyLarge
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w800,
+                                          ),
+                                    ),
+                                    if (widget.showMemberNames &&
+                                        (item.shopMember?.name
+                                                .trim()
+                                                .isNotEmpty ??
+                                            false)) ...[
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        item.shopMember!.name,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall
+                                            ?.copyWith(
+                                              color: const Color(0xFF5D676B),
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                              if (widget.onEditSchedule != null) ...[
+                                const SizedBox(width: 10),
+                                OutlinedButton(
+                                  onPressed: () => widget.onEditSchedule!(item),
+                                  child: const Text('수정'),
+                                ),
+                              ],
+                            ],
+                          ),
+                          if (item != selectedSchedules.last)
+                            const SizedBox(height: 8),
+                        ],
+                    ],
+                  ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -667,10 +1605,7 @@ class _NoticesCardState extends ConsumerState<_NoticesCard> {
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(
-          SnackBar(
-            content: Text(message),
-            behavior: SnackBarBehavior.floating,
-          ),
+          SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
         );
     } finally {
       if (mounted) {
@@ -766,9 +1701,9 @@ class _NoticesCardState extends ConsumerState<_NoticesCard> {
               if (items.isEmpty) {
                 return Text(
                   '등록된 공지사항이 없습니다.',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium?.copyWith(color: const Color(0xFF6B787D)),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: const Color(0xFF6B787D),
+                  ),
                 );
               }
 
@@ -814,8 +1749,9 @@ class _NoticesCardState extends ConsumerState<_NoticesCard> {
                           const SizedBox(height: 10),
                           Text(
                             item.content,
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(height: 1.5),
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodyMedium?.copyWith(height: 1.5),
                           ),
                           if ((item.createdAt ?? '').isNotEmpty) ...[
                             const SizedBox(height: 10),
@@ -841,10 +1777,7 @@ class _NoticesCardState extends ConsumerState<_NoticesCard> {
 }
 
 class _OperationCard extends StatelessWidget {
-  const _OperationCard({
-    required this.inviteCode,
-    required this.qrCodeValue,
-  });
+  const _OperationCard({required this.inviteCode, required this.qrCodeValue});
 
   final String inviteCode;
   final String qrCodeValue;
@@ -945,7 +1878,8 @@ class _PendingMembersCard extends ConsumerStatefulWidget {
   final AsyncValue<List<ShopMemberSummaryResponse>> pendingMembers;
 
   @override
-  ConsumerState<_PendingMembersCard> createState() => _PendingMembersCardState();
+  ConsumerState<_PendingMembersCard> createState() =>
+      _PendingMembersCardState();
 }
 
 class _PendingMembersCardState extends ConsumerState<_PendingMembersCard> {
@@ -1018,10 +1952,7 @@ class _PendingMembersCardState extends ConsumerState<_PendingMembersCard> {
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(
-          SnackBar(
-            content: Text(message),
-            behavior: SnackBarBehavior.floating,
-          ),
+          SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
         );
       setState(() {
         _submittingMemberId = null;
@@ -1142,11 +2073,53 @@ class _PendingMembersCardState extends ConsumerState<_PendingMembersCard> {
   }
 }
 
+class _OwnerActionCard extends StatelessWidget {
+  const _OwnerActionCard({required this.shopId});
+
+  final int shopId;
+
+  @override
+  Widget build(BuildContext context) {
+    return _Panel(
+      backgroundColor: const Color(0xFFF5F3FF),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '사장님 빠른 작업',
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF364FC7),
+                foregroundColor: Colors.white,
+                minimumSize: const Size.fromHeight(52),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              onPressed: () {
+                context.push(
+                  '${ShopScheduleCreatePage.routePath}?shopId=$shopId',
+                );
+              },
+              icon: const Icon(Icons.calendar_month_rounded),
+              label: const Text('일정 등록'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _BottomActions extends StatelessWidget {
-  const _BottomActions({
-    required this.onMyPage,
-    required this.onLogout,
-  });
+  const _BottomActions({required this.onMyPage, required this.onLogout});
 
   final VoidCallback onMyPage;
   final VoidCallback onLogout;

@@ -23,6 +23,12 @@ public class ScheduleDto {
         MONTH
     }
 
+    public enum EditScope {
+        THIS_ONLY,
+        FOLLOWING,
+        ALL
+    }
+
     @Getter
     @Setter
     public static class Detail extends Summary {
@@ -42,6 +48,7 @@ public class ScheduleDto {
         private LocalDate workDate;
         private LocalTime startTime;
         private LocalTime endTime;
+        private String repeatGroupKey;
         private AppType.ScheduleStatus status;
         private LocalDateTime createdAt;
 
@@ -90,6 +97,22 @@ public class ScheduleDto {
     public static class CreateResponse {
         @NotEmpty
         private List<Detail> schedules;
+    }
+
+    @Getter
+    @Setter
+    public static class EditForm {
+        @NotNull
+        private LocalDate workDate;
+
+        @NotNull
+        private LocalTime startTime;
+
+        @NotNull
+        private LocalTime endTime;
+
+        @NotNull
+        private EditScope scope;
     }
 
     @Getter

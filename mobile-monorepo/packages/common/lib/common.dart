@@ -2,7 +2,9 @@ library common;
 
 export 'src/constants/constants.dart';
 export 'src/model/dto/account_dto.dart';
+export 'src/model/dto/attendance_dto.dart';
 export 'src/model/dto/email_dto.dart';
+export 'src/model/dto/schedule_dto.dart';
 export 'src/model/dto/shop_dto.dart';
 export 'src/model/dto/shop_member_admin_dto.dart';
 export 'src/model/dto/shop_member_dto.dart';

@@ -135,6 +135,117 @@ final shopDetailProvider = FutureProvider.family<ShopResponse, int>((
   return ref.watch(shopServiceProvider).getShop(shopId);
 });
 
+String _formatDateForApi(DateTime date) {
+  final month = date.month.toString().padLeft(2, '0');
+  final day = date.day.toString().padLeft(2, '0');
+  return '${date.year}-$month-$day';
+}
+
+final shopAttendancesProvider =
+    FutureProvider.family<
+      List<AttendanceSummaryResponse>,
+      ({int shopId, int? shopMemberId, DateTime startDate, DateTime endDate})
+    >((ref, params) async {
+      final response = await ref
+          .watch(shopServiceProvider)
+          .getAttendances(
+            params.shopId,
+            queryParameters: {
+              'shopMemberId': params.shopMemberId,
+              'startDate': _formatDateForApi(params.startDate),
+              'endDate': _formatDateForApi(params.endDate),
+              'page': 1,
+              'size': 100,
+            },
+          );
+      return response.list ?? const <AttendanceSummaryResponse>[];
+    });
+
+final shopSchedulesProvider =
+    FutureProvider.family<
+      List<ScheduleSummaryResponse>,
+      ({int shopId, int? shopMemberId, DateTime baseDate, String viewType})
+    >((ref, params) async {
+      final response = await ref
+          .watch(shopServiceProvider)
+          .getSchedules(
+            params.shopId,
+            queryParameters: {
+              'shopMemberId': params.shopMemberId,
+              'baseDate': _formatDateForApi(params.baseDate),
+              'viewType': params.viewType,
+            },
+          );
+      return response.schedules;
+    });
+
+final shopScheduleRangeProvider =
+    FutureProvider.family<
+      List<ScheduleSummaryResponse>,
+      ({int shopId, int? shopMemberId, DateTime startDate, DateTime endDate})
+    >((ref, params) async {
+      DateTime dateOnly(DateTime date) =>
+          DateTime(date.year, date.month, date.day);
+
+      final service = ref.watch(shopServiceProvider);
+      final months = <DateTime>[];
+      final normalizedStartDate = dateOnly(params.startDate);
+      final normalizedEndDate = dateOnly(params.endDate);
+      var cursor = DateTime(
+        normalizedStartDate.year,
+        normalizedStartDate.month,
+        1,
+      );
+      final endMonth = DateTime(
+        normalizedEndDate.year,
+        normalizedEndDate.month,
+        1,
+      );
+      while (!cursor.isAfter(endMonth)) {
+        months.add(cursor);
+        cursor = DateTime(cursor.year, cursor.month + 1, 1);
+      }
+
+      final responses = await Future.wait(
+        months.map(
+          (month) => service.getSchedules(
+            params.shopId,
+            queryParameters: {
+              'shopMemberId': params.shopMemberId,
+              'baseDate': _formatDateForApi(month),
+              'viewType': 'MONTH',
+            },
+          ),
+        ),
+      );
+
+      final merged = <int, ScheduleSummaryResponse>{};
+      for (final response in responses) {
+        for (final schedule in response.schedules) {
+          final workDate = schedule.workDate;
+          if (workDate == null) {
+            continue;
+          }
+          final normalizedWorkDate = dateOnly(workDate);
+          final inRange =
+              !normalizedWorkDate.isBefore(normalizedStartDate) &&
+              !normalizedWorkDate.isAfter(normalizedEndDate);
+          if (inRange) {
+            merged[schedule.no] = schedule;
+          }
+        }
+      }
+      return merged.values.toList()..sort((left, right) {
+        final leftDate = left.workDate ?? params.startDate;
+        final rightDate = right.workDate ?? params.startDate;
+        final dateCompare = leftDate.compareTo(rightDate);
+        if (dateCompare != 0) {
+          return dateCompare;
+        }
+        return left.startTime.compareTo(right.startTime);
+      });
+    });
+
 final pendingShopMembersProvider =
     FutureProvider.family<List<ShopMemberSummaryResponse>, int>((
       ref,
@@ -148,6 +259,24 @@ final pendingShopMembersProvider =
               'statuses': 'PENDING',
               'page': 1,
               'size': 50,
+            },
+          );
+      return response.list ?? const <ShopMemberSummaryResponse>[];
+    });
+
+final activeShopMembersProvider =
+    FutureProvider.family<List<ShopMemberSummaryResponse>, int>((
+      ref,
+      shopId,
+    ) async {
+      final response = await ref
+          .watch(shopServiceProvider)
+          .getShopMembers(
+            shopId,
+            queryParameters: const {
+              'statuses': 'ACTIVE',
+              'page': 1,
+              'size': 100,
             },
           );
       return response.list ?? const <ShopMemberSummaryResponse>[];

@@ -40,6 +40,50 @@ class ShopService {
     return _requireData(response);
   }
 
+  Future<CreateScheduleResponse> createSchedules(
+    int shopId,
+    CreateScheduleRequest request, {
+    ApiRequestOptions? options,
+  }) async {
+    final response = await _api.createSchedules(
+      shopId,
+      request,
+      options: options,
+    );
+    return _requireData(response);
+  }
+
+  Future<AttendanceSummaryResponse> clockInByQr(
+    int shopId,
+    AttendanceQrRequest request, {
+    ApiRequestOptions? options,
+  }) async {
+    final response = await _api.clockInByQr(shopId, request, options: options);
+    return _requireData(response);
+  }
+
+  Future<AttendanceSummaryResponse> clockOutByQr(
+    int shopId,
+    AttendanceQrRequest request, {
+    ApiRequestOptions? options,
+  }) async {
+    final response = await _api.clockOutByQr(shopId, request, options: options);
+    return _requireData(response);
+  }
+
+  Future<AttendancePageResponse> getAttendances(
+    int shopId, {
+    ApiRequestOptions? options,
+    Map<String, dynamic>? queryParameters,
+  }) async {
+    final response = await _api.getAttendances(
+      shopId,
+      options: options,
+      queryParameters: queryParameters,
+    );
+    return _requireData(response);
+  }
+
   Future<List<ShopNoticeResponse>> getShopNotices(
     int shopId, {
     ApiRequestOptions? options,
@@ -98,6 +142,42 @@ class ShopService {
 
   Future<ShopResponse> getShop(int shopId, {ApiRequestOptions? options}) async {
     final response = await _api.getShop(shopId, options: options);
+    return _requireData(response);
+  }
+
+  Future<ScheduleSearchResponse> getSchedules(
+    int shopId, {
+    ApiRequestOptions? options,
+    Map<String, dynamic>? queryParameters,
+  }) async {
+    final response = await _api.getSchedules(
+      shopId,
+      options: options,
+      queryParameters: queryParameters,
+    );
+    return _requireData(response);
+  }
+
+  Future<void> cancelSchedule(
+    int shopId,
+    int scheduleId, {
+    ApiRequestOptions? options,
+  }) async {
+    await _api.cancelSchedule(shopId, scheduleId, options: options);
+  }
+
+  Future<ScheduleSummaryResponse> editSchedule(
+    int shopId,
+    int scheduleId,
+    EditScheduleRequest request, {
+    ApiRequestOptions? options,
+  }) async {
+    final response = await _api.editSchedule(
+      shopId,
+      scheduleId,
+      request,
+      options: options,
+    );
     return _requireData(response);
   }
 

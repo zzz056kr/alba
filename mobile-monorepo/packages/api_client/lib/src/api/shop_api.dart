@@ -21,6 +21,31 @@ abstract class ShopApi {
     ApiRequestOptions? options,
   });
 
+  Future<ResponseModel<CreateScheduleResponse>> createSchedules(
+    int shopId,
+    CreateScheduleRequest request, {
+    ApiRequestOptions? options,
+  });
+
+  Future<ResponseModel<AttendanceSummaryResponse>> clockInByQr(
+    int shopId,
+    AttendanceQrRequest request, {
+    ApiRequestOptions? options,
+  });
+
+  Future<ResponseModel<AttendanceSummaryResponse>> clockOutByQr(
+    int shopId,
+    AttendanceQrRequest request, {
+    ApiRequestOptions? options,
+  });
+
+  Future<ResponseModel<PageListResponse<AttendanceSummaryResponse>>>
+  getAttendances(
+    int shopId, {
+    ApiRequestOptions? options,
+    Map<String, dynamic>? queryParameters,
+  });
+
   Future<ResponseModel<List<ShopNoticeResponse>>> getShopNotices(
     int shopId, {
     ApiRequestOptions? options,
@@ -38,6 +63,25 @@ abstract class ShopApi {
 
   Future<ResponseModel<ShopResponse>> getShop(
     int shopId, {
+    ApiRequestOptions? options,
+  });
+
+  Future<ResponseModel<ScheduleSearchResponse>> getSchedules(
+    int shopId, {
+    ApiRequestOptions? options,
+    Map<String, dynamic>? queryParameters,
+  });
+
+  Future<ResponseModel<void>> cancelSchedule(
+    int shopId,
+    int scheduleId, {
+    ApiRequestOptions? options,
+  });
+
+  Future<ResponseModel<ScheduleSummaryResponse>> editSchedule(
+    int shopId,
+    int scheduleId,
+    EditScheduleRequest request, {
     ApiRequestOptions? options,
   });
 

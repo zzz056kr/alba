@@ -359,14 +359,33 @@ public class ShopService {
         }
 
         List<LocalDate> workDates = resolveScheduleDates(form);
+        String repeatGroupKey = workDates.size() > 1 ? UUID.randomUUID().toString() : null;
         List<Schedule> schedules = new ArrayList<>();
         for (LocalDate workDate : workDates) {
+            boolean hasOverlap = scheduleRepository
+                    .existsByShopMember_NoAndWorkDateAndStatusAndStartTimeLessThanAndEndTimeGreaterThan(
+                            shopMember.getNo(),
+                            workDate,
+                            AppType.ScheduleStatus.SCHEDULED,
+                            form.getEndTime(),
+                            form.getStartTime()
+                    );
+            if (hasOverlap) {
+                throw throwService.throwErrorByCode(
+                        SERVICE,
+                        CATEGORY,
+                        AppResultCode.CONFLICT,
+                        "RESULT_SCHEDULE_TIME_OVERLAP"
+                );
+            }
+
             Schedule schedule = new Schedule();
             schedule.setShop(shop);
             schedule.setShopMember(shopMember);
             schedule.setWorkDate(workDate);
             schedule.setStartTime(form.getStartTime());
             schedule.setEndTime(form.getEndTime());
+            schedule.setRepeatGroupKey(repeatGroupKey);
             schedule.setStatus(AppType.ScheduleStatus.SCHEDULED);
             schedule.setCreatedNo(account.getNo());
             schedule.setModifiedNo(account.getNo());
@@ -455,6 +474,140 @@ public class ShopService {
         schedule.setStatus(AppType.ScheduleStatus.CANCELED);
         schedule.setModifiedNo(account.getNo());
         scheduleRepository.save(schedule);
+    }
+
+    public ScheduleDto.Detail editSchedule(
+            Long shopId,
+            Long scheduleId,
+            ScheduleDto.EditForm form,
+            Authentication authentication
+    ) throws ServerException {
+        final String CATEGORY = "EDIT_SCHEDULE";
+
+        String principalName = authentication.getName();
+        if (principalName == null) {
+            throw throwService.throwErrorByCode(SERVICE, CATEGORY, AppResultCode.UNAUTHORIZED, "RESULT_UNAUTHORIZED");
+        }
+
+        Account account = accountService.activeUserCheckByPrincipalName(SERVICE, CATEGORY, principalName);
+
+        Schedule schedule = scheduleRepository.findByNoAndShop_No(scheduleId, shopId).orElse(null);
+        if (schedule == null) {
+            throw throwService.throwErrorByCode(SERVICE, CATEGORY, AppResultCode.NOT_FOUND, "RESULT_NOT_FOUND");
+        }
+
+        if (form.getEndTime().isBefore(form.getStartTime()) || form.getEndTime().equals(form.getStartTime())) {
+            throw throwService.throwErrorByCode(SERVICE, CATEGORY, AppResultCode.BAD_REQUEST, "RESULT_INVALID_PARAMETER");
+        }
+
+        ScheduleDto.EditScope scope = form.getScope();
+        if (scope == null) {
+            scope = ScheduleDto.EditScope.THIS_ONLY;
+        }
+
+        if (scope == ScheduleDto.EditScope.THIS_ONLY || schedule.getRepeatGroupKey() == null || schedule.getRepeatGroupKey().isBlank()) {
+            boolean hasOverlap = scheduleRepository
+                    .existsByShopMember_NoAndWorkDateAndStatusAndStartTimeLessThanAndEndTimeGreaterThanAndNoNot(
+                            schedule.getShopMember().getNo(),
+                            form.getWorkDate(),
+                            AppType.ScheduleStatus.SCHEDULED,
+                            form.getEndTime(),
+                            form.getStartTime(),
+                            schedule.getNo()
+                    );
+            if (hasOverlap) {
+                throw throwService.throwErrorByCode(
+                        SERVICE,
+                        CATEGORY,
+                        AppResultCode.CONFLICT,
+                        "RESULT_SCHEDULE_TIME_OVERLAP"
+                );
+            }
+
+            schedule.setStatus(AppType.ScheduleStatus.CANCELED);
+            schedule.setModifiedNo(account.getNo());
+            scheduleRepository.save(schedule);
+
+            Schedule replacement = new Schedule();
+            replacement.setShop(schedule.getShop());
+            replacement.setShopMember(schedule.getShopMember());
+            replacement.setWorkDate(form.getWorkDate());
+            replacement.setStartTime(form.getStartTime());
+            replacement.setEndTime(form.getEndTime());
+            replacement.setRepeatGroupKey(null);
+            replacement.setStatus(AppType.ScheduleStatus.SCHEDULED);
+            replacement.setCreatedNo(account.getNo());
+            replacement.setModifiedNo(account.getNo());
+            replacement = scheduleRepository.save(replacement);
+
+            return ScheduleDto.Detail.Mapper.INSTANCE.sourceToDestination(replacement);
+        }
+
+        List<Schedule> groupedSchedules = scheduleRepository
+                .findByShop_NoAndRepeatGroupKeyAndStatusOrderByWorkDateAscStartTimeAsc(
+                        shopId,
+                        schedule.getRepeatGroupKey(),
+                        AppType.ScheduleStatus.SCHEDULED
+                );
+
+        final ScheduleDto.EditScope editScope = scope;
+        final LocalDate anchorWorkDate = schedule.getWorkDate();
+        List<Schedule> targetSchedules = groupedSchedules.stream()
+                .filter(item -> editScope == ScheduleDto.EditScope.ALL || !item.getWorkDate().isBefore(anchorWorkDate))
+                .toList();
+
+        for (Schedule targetSchedule : targetSchedules) {
+            boolean hasOverlap = scheduleRepository
+                    .existsByShopMember_NoAndWorkDateAndStatusAndStartTimeLessThanAndEndTimeGreaterThanAndNoNot(
+                            targetSchedule.getShopMember().getNo(),
+                            targetSchedule.getWorkDate(),
+                            AppType.ScheduleStatus.SCHEDULED,
+                            form.getEndTime(),
+                            form.getStartTime(),
+                            targetSchedule.getNo()
+                    );
+            if (hasOverlap) {
+                throw throwService.throwErrorByCode(
+                        SERVICE,
+                        CATEGORY,
+                        AppResultCode.CONFLICT,
+                        "RESULT_SCHEDULE_TIME_OVERLAP"
+                );
+            }
+        }
+
+        for (Schedule targetSchedule : targetSchedules) {
+            targetSchedule.setStatus(AppType.ScheduleStatus.CANCELED);
+            targetSchedule.setModifiedNo(account.getNo());
+        }
+        scheduleRepository.saveAll(targetSchedules);
+
+        final String replacementRepeatGroupKey = scope == ScheduleDto.EditScope.ALL
+                ? schedule.getRepeatGroupKey()
+                : UUID.randomUUID().toString();
+
+        List<Schedule> replacementSchedules = new ArrayList<>();
+        for (Schedule targetSchedule : targetSchedules) {
+            Schedule replacement = new Schedule();
+            replacement.setShop(targetSchedule.getShop());
+            replacement.setShopMember(targetSchedule.getShopMember());
+            replacement.setWorkDate(targetSchedule.getWorkDate());
+            replacement.setStartTime(form.getStartTime());
+            replacement.setEndTime(form.getEndTime());
+            replacement.setRepeatGroupKey(replacementRepeatGroupKey);
+            replacement.setStatus(AppType.ScheduleStatus.SCHEDULED);
+            replacement.setCreatedNo(account.getNo());
+            replacement.setModifiedNo(account.getNo());
+            replacementSchedules.add(replacement);
+        }
+        replacementSchedules = scheduleRepository.saveAll(replacementSchedules);
+
+        Schedule replacement = replacementSchedules.stream()
+                .filter(item -> item.getWorkDate().equals(anchorWorkDate))
+                .findFirst()
+                .orElse(replacementSchedules.get(0));
+
+        return ScheduleDto.Detail.Mapper.INSTANCE.sourceToDestination(replacement);
     }
 
     public AttendanceDto.Detail clockInByQr(

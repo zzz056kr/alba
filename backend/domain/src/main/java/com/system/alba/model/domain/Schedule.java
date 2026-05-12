@@ -32,6 +32,7 @@ public class Schedule extends BaseEntity {
     private LocalDate workDate;
     private LocalTime startTime;
     private LocalTime endTime;
+    private String repeatGroupKey;
 
     @Enumerated(EnumType.STRING)
     private AppType.ScheduleStatus status;

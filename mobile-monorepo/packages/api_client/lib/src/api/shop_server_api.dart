@@ -75,6 +75,86 @@ class ShopServerApi implements ShopApi {
   }
 
   @override
+  Future<ResponseModel<CreateScheduleResponse>> createSchedules(
+    int shopId,
+    CreateScheduleRequest request, {
+    ApiRequestOptions? options,
+  }) async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/shop/$shopId/schedules',
+      data: request.toJson(),
+      options: options?.toDioOptions(),
+    );
+
+    return ResponseModel<CreateScheduleResponse>.fromJson(
+      response.data ?? const <String, dynamic>{},
+      (value) => CreateScheduleResponse.fromJson(
+        value is Map<String, dynamic>
+            ? <String, dynamic>{'data': value}
+            : const <String, dynamic>{},
+      ),
+    );
+  }
+
+  @override
+  Future<ResponseModel<AttendanceSummaryResponse>> clockInByQr(
+    int shopId,
+    AttendanceQrRequest request, {
+    ApiRequestOptions? options,
+  }) async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/shop/$shopId/attendances/clock-in/qr',
+      data: request.toJson(),
+      options: options?.toDioOptions(),
+    );
+
+    return ResponseModel<AttendanceSummaryResponse>.fromJson(
+      response.data ?? const <String, dynamic>{},
+      (value) => AttendanceSummaryResponse.fromJson(value),
+    );
+  }
+
+  @override
+  Future<ResponseModel<AttendanceSummaryResponse>> clockOutByQr(
+    int shopId,
+    AttendanceQrRequest request, {
+    ApiRequestOptions? options,
+  }) async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/shop/$shopId/attendances/clock-out/qr',
+      data: request.toJson(),
+      options: options?.toDioOptions(),
+    );
+
+    return ResponseModel<AttendanceSummaryResponse>.fromJson(
+      response.data ?? const <String, dynamic>{},
+      (value) => AttendanceSummaryResponse.fromJson(value),
+    );
+  }
+
+  @override
+  Future<ResponseModel<PageListResponse<AttendanceSummaryResponse>>>
+  getAttendances(
+    int shopId, {
+    ApiRequestOptions? options,
+    Map<String, dynamic>? queryParameters,
+  }) async {
+    final response = await _dio.get<Map<String, dynamic>>(
+      '/shop/$shopId/attendances',
+      queryParameters: queryParameters,
+      options: options?.toDioOptions(),
+    );
+
+    return ResponseModel<PageListResponse<AttendanceSummaryResponse>>.fromJson(
+      response.data ?? const <String, dynamic>{},
+      (value) => PageListResponse<AttendanceSummaryResponse>.fromJson(
+        value is Map<String, dynamic> ? value : const <String, dynamic>{},
+        AttendanceSummaryResponse.fromJson,
+      ),
+    );
+  }
+
+  @override
   Future<ResponseModel<List<ShopNoticeResponse>>> getShopNotices(
     int shopId, {
     ApiRequestOptions? options,
@@ -149,6 +229,64 @@ class ShopServerApi implements ShopApi {
             ? <String, dynamic>{'data': value}
             : const <String, dynamic>{},
       ),
+    );
+  }
+
+  @override
+  Future<ResponseModel<ScheduleSearchResponse>> getSchedules(
+    int shopId, {
+    ApiRequestOptions? options,
+    Map<String, dynamic>? queryParameters,
+  }) async {
+    final response = await _dio.get<Map<String, dynamic>>(
+      '/shop/$shopId/schedules',
+      queryParameters: queryParameters,
+      options: options?.toDioOptions(),
+    );
+
+    return ResponseModel<ScheduleSearchResponse>.fromJson(
+      response.data ?? const <String, dynamic>{},
+      (value) => ScheduleSearchResponse.fromJson(
+        value is Map<String, dynamic>
+            ? <String, dynamic>{'data': value}
+            : const <String, dynamic>{},
+      ),
+    );
+  }
+
+  @override
+  Future<ResponseModel<void>> cancelSchedule(
+    int shopId,
+    int scheduleId, {
+    ApiRequestOptions? options,
+  }) async {
+    final response = await _dio.delete<Map<String, dynamic>>(
+      '/shop/$shopId/schedules/$scheduleId',
+      options: options?.toDioOptions(),
+    );
+
+    return ResponseModel<void>.fromJson(
+      response.data ?? const <String, dynamic>{},
+      (_) => null,
+    );
+  }
+
+  @override
+  Future<ResponseModel<ScheduleSummaryResponse>> editSchedule(
+    int shopId,
+    int scheduleId,
+    EditScheduleRequest request, {
+    ApiRequestOptions? options,
+  }) async {
+    final response = await _dio.put<Map<String, dynamic>>(
+      '/shop/$shopId/schedules/$scheduleId',
+      data: request.toJson(),
+      options: options?.toDioOptions(),
+    );
+
+    return ResponseModel<ScheduleSummaryResponse>.fromJson(
+      response.data ?? const <String, dynamic>{},
+      (value) => ScheduleSummaryResponse.fromJson(value),
     );
   }
 
